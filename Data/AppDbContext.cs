@@ -15,7 +15,8 @@ public partial class AppDbContext : DbContext
         : base(options)
     {
     }
-
+    public DbSet<Skill> Skills { get; set; } = null!;
+        public DbSet<UserSkill> UserSkills { get; set; } = null!;
     // --- Các DbSet (Giữ nguyên) ---
     public virtual DbSet<AdminLog> AdminLogs { get; set; }
     public virtual DbSet<Application> Applications { get; set; }
@@ -73,12 +74,12 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.JobTitle)
                 .HasMaxLength(100)
                 .HasColumnName("job_title");
-            
+
             // ❌ ĐÃ XÓA DÒNG GÂY LỖI CS1061:
             // entity.Property(e => e.Password)
             //     .HasMaxLength(255)
             //     .HasColumnName("password"); 
-            
+
             // ✅ BỔ SUNG CẤU HÌNH CHO 2 TRƯỜNG MỚI (nếu cần đặt tên cột khác)
             // entity.Property(e => e.PasswordHash) 
             //     .HasColumnName("password_hash");

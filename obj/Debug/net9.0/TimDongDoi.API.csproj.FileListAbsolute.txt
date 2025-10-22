@@ -1,3 +1,11 @@
+D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.csproj.AssemblyReference.cache
+D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\rpswa.dswa.cache.json
+D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.GeneratedMSBuildEditorConfig.editorconfig
+D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.AssemblyInfoInputs.cache
+D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.AssemblyInfo.cs
+D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.csproj.CoreCompileInputs.cache
+D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.MvcApplicationPartsAssemblyInfo.cs
+D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.MvcApplicationPartsAssemblyInfo.cache
 D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\appsettings.Development.json
 D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\appsettings.json
 D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\TimDongDoi.API.staticwebassets.endpoints.json
@@ -148,14 +156,6 @@ D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\runtimes\win\lib\net6.0\Syst
 D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
 D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
 D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
-D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.csproj.AssemblyReference.cache
-D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\rpswa.dswa.cache.json
-D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.GeneratedMSBuildEditorConfig.editorconfig
-D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.AssemblyInfoInputs.cache
-D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.AssemblyInfo.cs
-D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.csproj.CoreCompileInputs.cache
-D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.MvcApplicationPartsAssemblyInfo.cs
-D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.MvcApplicationPartsAssemblyInfo.cache
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\rjimswa.dswa.cache.json
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json

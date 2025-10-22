@@ -34,7 +34,12 @@ namespace TimDongDoi.API.Controllers
                 int userId = _userService.GetUserIdFromClaims(); 
                 
                 var profile = await _userService.GetUserProfile(userId);
-                return Ok(profile);
+                
+                return Ok(new 
+                { 
+                    Message = "Lấy hồ sơ thành công.", 
+                    Data = profile 
+                });
             }
             catch (UnauthorizedAccessException)
             {
@@ -47,7 +52,8 @@ namespace TimDongDoi.API.Controllers
             catch (Exception ex)
             {
                 // Log lỗi chi tiết tại đây
-                return StatusCode((int)HttpStatusCode.InternalServerError, new { Message = "Lỗi server khi lấy hồ sơ.", Detail = ex.Message });
+                return StatusCode((int)HttpStatusCode.InternalServerError, 
+                    new { Message = "Lỗi server khi lấy hồ sơ.", Detail = ex.Message });
             }
         }
 
@@ -56,12 +62,16 @@ namespace TimDongDoi.API.Controllers
         /// PUT /api/Users/profile/me
         /// </summary>
         [HttpPut("profile/me")]
-        public async Task<IActionResult> UpdateCurrentUserProfile(UserUpdateDto updateDto)
+        public async Task<IActionResult> UpdateCurrentUserProfile([FromBody] UserUpdateDto updateDto)
         {
             // Kiểm tra ModelState (xác thực DTO)
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(new 
+                { 
+                    Message = "Dữ liệu không hợp lệ.", 
+                    Errors = ModelState 
+                });
             }
             
             try
@@ -69,11 +79,21 @@ namespace TimDongDoi.API.Controllers
                 int userId = _userService.GetUserIdFromClaims(); 
                 
                 var updatedProfile = await _userService.UpdateUserProfile(userId, updateDto);
-                return Ok(new { Message = "Cập nhật hồ sơ thành công.", Profile = updatedProfile });
+                
+                return Ok(new 
+                { 
+                    Message = "Cập nhật hồ sơ thành công.", 
+                    Data = updatedProfile 
+                });
             }
             catch (UnauthorizedAccessException)
             {
                 return Unauthorized(new { Message = "JWT Token không hợp lệ hoặc thiếu thông tin người dùng." });
+            }
+            catch (ArgumentException ex)
+            {
+                // Xử lý lỗi validation từ Service (Gender, Birthday, Salary)
+                return BadRequest(new { Message = ex.Message });
             }
             catch (KeyNotFoundException ex)
             {
@@ -81,7 +101,8 @@ namespace TimDongDoi.API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode((int)HttpStatusCode.InternalServerError, new { Message = "Lỗi server khi cập nhật hồ sơ.", Detail = ex.Message });
+                return StatusCode((int)HttpStatusCode.InternalServerError, 
+                    new { Message = "Lỗi server khi cập nhật hồ sơ.", Detail = ex.Message });
             }
         }
     }

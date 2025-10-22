@@ -141,7 +141,9 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ISkillService, SkillService>(); // ← THÊM DÒNG NÀY
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -172,5 +174,5 @@ app.MapGet("/", () => new
 Console.WriteLine("\n🚀 Application started successfully!");
 Console.WriteLine($"📍 Environment: {app.Environment.EnvironmentName}");
 Console.WriteLine($"🔐 JWT Authentication: Enabled\n");
-
+// Services
 app.Run();

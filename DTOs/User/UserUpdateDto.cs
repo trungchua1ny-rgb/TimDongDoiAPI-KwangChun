@@ -9,7 +9,7 @@ namespace TimDongDoi.API.DTOs.User
         [MaxLength(100, ErrorMessage = "Họ và tên không được quá 100 ký tự.")]
         public string FullName { get; set; } = string.Empty;
         
-        [Phone(ErrorMessage = "Số điện thoại không hợp lệ.")]
+       [RegularExpression(@"^(0|\+84)[0-9]{9,10}$", ErrorMessage = "Số điện thoại không hợp lệ.")]
         [MaxLength(20, ErrorMessage = "Số điện thoại không được quá 20 ký tự.")]
         public string? Phone { get; set; }
         

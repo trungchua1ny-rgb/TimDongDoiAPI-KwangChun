@@ -34,7 +34,7 @@ namespace TimDongDoi.API.Services.Implementations
                 Id = user.Id,
                 Email = user.Email,
                 FullName = user.FullName ?? string.Empty,
-                Role = user.Role ?? "User",
+                Role = user.Role ?? "user",
                 Phone = user.Phone,
                 Avatar = user.Avatar,
                 AboutMe = user.AboutMe,
@@ -46,44 +46,10 @@ namespace TimDongDoi.API.Services.Implementations
                 CvFile = user.CvFile,
                 CreatedAt = user.CreatedAt,
                 
-                // Map Skills
-                Skills = user.UserSkills
-                    .Select(us => new UserSkillDto
-                    {
-                        Id = us.Id,
-                        SkillName = us.Skill?.Name ?? "N/A", 
-                        Level = us.Level,
-                        YearsExperience = us.YearsExperience
-                    }).ToList(),
-                
-                // Map Experiences (Đã sửa lỗi chuyển đổi ngày tháng)
-                Experiences = user.UserExperiences
-                    .Select(ue => new UserExperienceDto
-                    {
-                        Id = ue.Id,
-                        CompanyName = ue.CompanyName,
-                        Position = ue.Position,
-                        // Chuyển đổi an toàn từ DateOnly/DB Date sang DateTime?
-                        StartDate = ue.StartDate.HasValue 
-                            ? DateTime.SpecifyKind(ue.StartDate.Value.ToDateTime(new TimeOnly(0, 0)), DateTimeKind.Utc) 
-                            : null,
-                        EndDate = ue.EndDate.HasValue 
-                            ? DateTime.SpecifyKind(ue.EndDate.Value.ToDateTime(new TimeOnly(0, 0)), DateTimeKind.Utc) 
-                            : null, 
-                        IsCurrent = ue.IsCurrent
-                    }).ToList(),
-                
-                // Map Educations
-                Educations = user.UserEducations
-                    .Select(ue => new UserEducationDto
-                    {
-                        Id = ue.Id,
-                        SchoolName = ue.SchoolName,
-                        Major = ue.Major,
-                        Degree = ue.Degree,
-                        StartYear = ue.StartYear,
-                        EndYear = ue.EndYear
-                    }).ToList()
+                // Bỏ qua các navigation properties
+                Skills = new List<UserSkillDto>(),
+                Experiences = new List<UserExperienceDto>(),
+                Educations = new List<UserEducationDto>()
             };
         }
 
@@ -99,24 +65,19 @@ namespace TimDongDoi.API.Services.Implementations
             return userId;
         }
 
-        // Lấy hồ sơ người dùng (Eager Loading)
         public async Task<UserProfileDto> GetUserProfile(int userId)
-        {
-            var user = await _context.Users
-                .Include(u => u.UserSkills)
-                    .ThenInclude(us => us.Skill) 
-                .Include(u => u.UserExperiences)
-                .Include(u => u.UserEducations)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == userId);
-
-            if (user == null)
             {
-                throw new KeyNotFoundException("Không tìm thấy người dùng.");
-            }
+                var user = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == userId);
 
-            return MapToUserProfileDto(user);
-        }
+                if (user == null)
+                {
+                    throw new KeyNotFoundException("Không tìm thấy người dùng.");
+                }
+
+                return MapToUserProfileDto(user);
+            }
 
         // Cập nhật hồ sơ
         public async Task<UserProfileDto> UpdateUserProfile(int userId, UserUpdateDto updateDto)
@@ -135,8 +96,22 @@ namespace TimDongDoi.API.Services.Implementations
             user.Address = updateDto.Address;
             user.JobTitle = updateDto.JobTitle;
             user.SalaryExpectation = updateDto.SalaryExpectation;
-            user.Birthday = updateDto.Birthday; 
-            user.Gender = updateDto.Gender;
+            user.Birthday = updateDto.Birthday;
+
+            // Validate và normalize gender trước khi lưu
+            if (!string.IsNullOrWhiteSpace(updateDto.Gender))
+            {
+                var normalizedGender = updateDto.Gender.ToLower().Trim();
+                if (normalizedGender == "male" || normalizedGender == "female" || normalizedGender == "other")
+                {
+                    user.Gender = normalizedGender;
+                }
+                else
+                {
+                    throw new ArgumentException("Giới tính phải là 'male', 'female' hoặc 'other'");
+                }
+            }
+
             user.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();

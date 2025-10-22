@@ -1,27 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TimDongDoi.API.Models;
-
-public partial class UserSkill
+namespace TimDongDoi.API.Models
 {
-    public int Id { get; set; }
+    [Table("user_skills")]
+    public partial class UserSkill
+    {
+        [Key]
+        [Column("id")]  
+        public int Id { get; set; }
 
-    public int UserId { get; set; }
+        [Required]
+        [Column("user_id")]
+        public int UserId { get; set; }
 
-    public int SkillId { get; set; }
+        [Required]
+        [Column("skill_id")]
+        public int SkillId { get; set; }
 
-    public string? Level { get; set; }
+        [Column("level")]
+        [MaxLength(50)]
+        public string? Level { get; set; }
 
-    public decimal? YearsExperience { get; set; }
+        [Column("years_experience")]
+        public decimal? YearsExperience { get; set; }
 
-    public string? Description { get; set; }
+        [Column("description")]
+        public string? Description { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
+        [Column("created_at")]
+        public DateTime? CreatedAt { get; set; }
 
-    public DateTime? UpdatedAt { get; set; }
+        [Column("updated_at")]
+        public DateTime? UpdatedAt { get; set; }
 
-    public virtual Skill Skill { get; set; } = null!;
+        // Navigation properties
+        [ForeignKey("SkillId")]
+        public virtual Skill Skill { get; set; } = null!;
 
-    public virtual User User { get; set; } = null!;
+        [ForeignKey("UserId")]
+        public virtual User User { get; set; } = null!;
+    }
 }
