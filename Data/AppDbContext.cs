@@ -31,7 +31,7 @@ public partial class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // ... (Giữ nguyên các cấu hình Entity khác) ...
-        
+
         // --- CHÚ Ý: CHỈNH SỬA ENTITY USER ---
         modelBuilder.Entity<User>(entity =>
         {
@@ -102,8 +102,35 @@ public partial class AppDbContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnName("updated_at");
         });
-        
+
         // ... (Giữ nguyên các cấu hình Entity khác) ...
+
+        modelBuilder.Entity<UserSkill>(entity =>
+    {
+        entity.ToTable("user_skills");
+
+        // Map tên cột
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.UserId).HasColumnName("user_id");
+        entity.Property(e => e.SkillId).HasColumnName("skill_id");
+        entity.Property(e => e.Level).HasColumnName("level");
+        entity.Property(e => e.YearsExperience).HasColumnName("years_experience");
+        entity.Property(e => e.Description).HasColumnName("description");
+        entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+        entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+    });
+     
+    modelBuilder.Entity<Skill>(entity =>
+    {
+        entity.ToTable("skills");
+        
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.Name).HasColumnName("name");
+        entity.Property(e => e.Category).HasColumnName("category");
+        entity.Property(e => e.Icon).HasColumnName("icon");
+        entity.Property(e => e.Popularity).HasColumnName("popularity");
+        entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+    });
 
         OnModelCreatingPartial(modelBuilder);
     }
