@@ -36,9 +36,7 @@ namespace TimDongDoi.API.Models
         // --- MỐI QUAN HỆ ĐÃ BỊ LỖI VÀ TIỀM ẨN CẦN THÊM [NotMapped] ---
         
         // ❌ Lỗi hiện tại: MessageFromUsers/MessageToUsers
-        [NotMapped]
         public virtual ICollection<Message> MessageFromUsers { get; set; } = new List<Message>();
-        [NotMapped]
         public virtual ICollection<Message> MessageToUsers { get; set; } = new List<Message>();
 
         // ❌ Các mối quan hệ Report đã bị lỗi trước đó

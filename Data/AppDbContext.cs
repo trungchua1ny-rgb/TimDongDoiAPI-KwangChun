@@ -50,7 +50,25 @@ public virtual DbSet<Report> Reports { get; set; }
     // từ Program.cs (builder.Services.AddDbContext)
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
+    {   
+        // Trong file AppDbContext.cs, bên trong hàm OnModelCreating
+
+modelBuilder.Entity<Message>(entity =>
+{
+    // Liên kết Message.FromUser (người gửi) với User.MessageFromUsers (danh sách tin nhắn đã gửi)
+    entity.HasOne(m => m.FromUser)
+          .WithMany(u => u.MessageFromUsers) // <-- Phải khớp với tên trong User.cs
+          .HasForeignKey(m => m.FromUserId)
+          .OnDelete(DeleteBehavior.ClientSetNull)
+          .HasConstraintName("FK_Messages_FromUser");
+
+    // Liên kết Message.ToUser (người nhận) với User.MessageToUsers (danh sách tin nhắn đã nhận)
+    entity.HasOne(m => m.ToUser)
+          .WithMany(u => u.MessageToUsers) // <-- Phải khớp với tên trong User.cs
+          .HasForeignKey(m => m.ToUserId)
+          .OnDelete(DeleteBehavior.ClientSetNull)
+          .HasConstraintName("FK_Messages_ToUser");
+});
         // ... (Giữ nguyên các cấu hình Entity khác) ...
 
         // --- CHÚ Ý: CHỈNH SỬA ENTITY USER ---
