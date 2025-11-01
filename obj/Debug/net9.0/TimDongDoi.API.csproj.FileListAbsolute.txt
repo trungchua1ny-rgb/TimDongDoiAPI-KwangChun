@@ -170,3 +170,4 @@ D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\refint\TimDongDoi.API.dll
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.pdb
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.genruntimeconfig.cache
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\ref\TimDongDoi.API.dll
+D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\TimDongDoi.API.staticwebassets.runtime.json

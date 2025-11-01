@@ -179,19 +179,103 @@ modelBuilder.Entity<Message>(entity =>
         entity.Property(e => e.CreatedAt).HasColumnName("created_at");
         entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
     });
-     
-    modelBuilder.Entity<Skill>(entity =>
-    {
-        entity.ToTable("skills");
-        
-        entity.Property(e => e.Id).HasColumnName("id");
-        entity.Property(e => e.Name).HasColumnName("name");
-        entity.Property(e => e.Category).HasColumnName("category");
-        entity.Property(e => e.Icon).HasColumnName("icon");
-        entity.Property(e => e.Popularity).HasColumnName("popularity");
-        entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-    });
 
+        modelBuilder.Entity<Skill>(entity =>
+        {
+            entity.ToTable("skills");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name).HasColumnName("name");
+            entity.Property(e => e.Category).HasColumnName("category");
+            entity.Property(e => e.Icon).HasColumnName("icon");
+            entity.Property(e => e.Popularity).HasColumnName("popularity");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+        });
+        // ============================================
+        // THÊM VÀO CUỐI OnModelCreating()
+        // TRƯỚC DÒNG: OnModelCreatingPartial(modelBuilder);
+        // ============================================
+
+        // ==================== COMPANY VERIFICATION ====================
+        // ==================== COMPANY VERIFICATION ====================
+        // THAY THẾ đoạn cũ bằng code này
+        modelBuilder.Entity<CompanyVerification>(entity =>
+        {
+            entity.ToTable("company_verifications");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+
+            // ⚠️ Map VerifiedBy vào cột verified_by (cột mới)
+            entity.Property(e => e.VerifiedBy).HasColumnName("verified_by");
+
+            entity.Property(e => e.DocumentType).HasMaxLength(50).HasColumnName("document_type");
+            entity.Property(e => e.DocumentUrl).HasMaxLength(255).HasColumnName("document_url");
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("pending").HasColumnName("status");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.SubmittedAt).HasDefaultValueSql("(getdate())").HasColumnName("submitted_at");
+
+            // ⚠️ Map VerifiedAt vào cột verified_at (cột mới)
+            entity.Property(e => e.VerifiedAt).HasColumnName("verified_at");
+
+            // Relationships
+            entity.HasOne(d => d.Company).WithMany(p => p.CompanyVerifications)
+                .HasForeignKey(d => d.CompanyId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.VerifiedByNavigation).WithMany(p => p.CompanyVerifications)
+                .HasForeignKey(d => d.VerifiedBy)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+        modelBuilder.Entity<CompanyLocation>(entity =>
+        {
+            // 1. Ánh xạ tên bảng
+            entity.ToTable("company_locations");
+
+            // 2. (Khuyên dùng) Ánh xạ luôn các cột
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+            entity.Property(e => e.Address).HasColumnName("address");
+            entity.Property(e => e.City).HasColumnName("city");
+            entity.Property(e => e.Country).HasColumnName("country");
+            entity.Property(e => e.IsHeadquarter).HasColumnName("is_headquarter");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+        });
+// File: Data/AppDbContext.cs (Trong OnModelCreating)
+
+// ... (Giữ nguyên các cấu hình Entity khác) ...
+
+// =============================================================
+// CẤU HÌNH Job (FIX LỖI 500 MỚI)
+// =============================================================
+modelBuilder.Entity<Job>(entity =>
+{
+    // 1. Ánh xạ tên bảng
+    entity.ToTable("jobs");
+
+    // 2. Ánh xạ tên cột (Dựa trên lỗi của bạn)
+    entity.Property(e => e.Id).HasColumnName("id");
+    entity.Property(e => e.CompanyId).HasColumnName("company_id");
+    entity.Property(e => e.Title).HasColumnName("title");
+    entity.Property(e => e.Description).HasColumnName("description");
+    entity.Property(e => e.Requirements).HasColumnName("requirements");
+    entity.Property(e => e.Benefits).HasColumnName("benefits");
+    entity.Property(e => e.Type).HasColumnName("type");
+    entity.Property(e => e.Level).HasColumnName("level");
+    entity.Property(e => e.SalaryMin).HasColumnName("salary_min");
+    entity.Property(e => e.SalaryMax).HasColumnName("salary_max");
+    entity.Property(e => e.SalaryCurrency).HasColumnName("salary_currency");
+    entity.Property(e => e.Location).HasColumnName("location");
+    entity.Property(e => e.LocationType).HasColumnName("location_type");
+    entity.Property(e => e.Positions).HasColumnName("positions");
+    entity.Property(e => e.Deadline).HasColumnName("deadline");
+    entity.Property(e => e.Status).HasColumnName("status");
+    entity.Property(e => e.Views).HasColumnName("views");
+    entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+    entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+});
+
+// ... (Giữ nguyên các cấu hình Entity khác) ...
         OnModelCreatingPartial(modelBuilder);
     }
 

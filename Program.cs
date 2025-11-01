@@ -17,15 +17,21 @@ builder.Services.AddControllers();
 // HttpContextAccessor for accessing HTTP context
 builder.Services.AddHttpContextAccessor();
 
-// Register Services
-builder.Services.AddScoped<IUserService, UserService>();
+// ============================================
+// ĐĂNG KÝ SERVICES (ĐÃ GỘP)
+// ============================================
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ISkillService, SkillService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>(); // <-- Module E của bạn
 
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// JWT Authentication
+// ============================================
+// JWT AUTHENTICATION (FIX LỖI 401)
+// ============================================
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
 var issuer = jwtSettings["Issuer"];
@@ -141,9 +147,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<ISkillService, SkillService>(); // ← THÊM DÒNG NÀY
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -159,7 +163,7 @@ app.UseCors("AllowAll");
 // IMPORTANT: Authentication must come before Authorization
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseStaticFiles(); // 👈 Kích hoạt wwwroot
 app.MapControllers();
 
 // Test endpoint
@@ -174,5 +178,5 @@ app.MapGet("/", () => new
 Console.WriteLine("\n🚀 Application started successfully!");
 Console.WriteLine($"📍 Environment: {app.Environment.EnvironmentName}");
 Console.WriteLine($"🔐 JWT Authentication: Enabled\n");
-// Services
+
 app.Run();

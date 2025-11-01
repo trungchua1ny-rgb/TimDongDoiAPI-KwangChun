@@ -1,29 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace TimDongDoi.API.Models;
-
-public partial class CompanyVerification
+namespace TimDongDoi.API.Models
 {
-    public int Id { get; set; }
+    public partial class CompanyVerification
+    {
+        public int Id { get; set; }
 
-    public int CompanyId { get; set; }
+        public int CompanyId { get; set; }
 
-    public string? BusinessLicense { get; set; }
+        public int? VerifiedBy { get; set; }
 
-    public string? TaxCode { get; set; }
+        public string? DocumentType { get; set; }
 
-    public string? Status { get; set; }
+        public string? DocumentUrl { get; set; }
 
-    public string? RejectReason { get; set; }
+        public string? Status { get; set; }
 
-    public int? ApprovedBy { get; set; }
+        public string? Notes { get; set; }
 
-    public DateTime? SubmittedAt { get; set; }
+        public DateTime? SubmittedAt { get; set; }
 
-    public DateTime? ApprovedAt { get; set; }
+        public DateTime? VerifiedAt { get; set; }
 
-    public virtual User? ApprovedByNavigation { get; set; }
+        // Navigation properties
+        public virtual Company Company { get; set; } = null!;
 
-    public virtual Company Company { get; set; } = null!;
+        public virtual User? VerifiedByNavigation { get; set; }
+    }
 }
