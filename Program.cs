@@ -25,6 +25,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ISkillService, SkillService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>(); // <-- Module E của bạn
 builder.Services.AddScoped<IJobService, JobService>();       // <-- Module F của bạn
+builder.Services.AddScoped<IApplicationService, ApplicationService>();
 
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
