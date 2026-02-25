@@ -1,31 +1,53 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TimDongDoi.API.Models;
-
-public partial class ProjectApplication
+namespace TimDongDoi.API.Models
 {
-    public int Id { get; set; }
+    [Table("project_applications")]
+    public class ProjectApplication
+    {
+        [Key]
+        [Column("id")]
+        public int Id { get; set; }
 
-    public int ProjectId { get; set; }
+        [Required]
+        [Column("project_id")]
+        public int ProjectId { get; set; }
 
-    public int PositionId { get; set; }
+        [Required]
+        [Column("position_id")]
+        public int PositionId { get; set; }
 
-    public int UserId { get; set; }
+        [Required]
+        [Column("user_id")]
+        public int UserId { get; set; }
 
-    public string? CoverLetter { get; set; }
+        [Column("cover_letter")]
+        public string CoverLetter { get; set; } = string.Empty;
 
-    public string? PortfolioLink { get; set; }
+        [MaxLength(500)]
+        [Column("portfolio_link")]
+        public string? PortfolioLink { get; set; }
 
-    public string? Status { get; set; }
+        [MaxLength(20)]
+        [Column("status")]
+        public string Status { get; set; } = "pending";
 
-    public DateTime? AppliedAt { get; set; }
+        [Column("applied_at")]
+        public DateTime AppliedAt { get; set; }
 
-    public DateTime? UpdatedAt { get; set; }
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; }
 
-    public virtual ProjectPosition Position { get; set; } = null!;
+        // Navigation properties
+        [ForeignKey("ProjectId")]
+        public virtual Project? Project { get; set; }
 
-    public virtual Project Project { get; set; } = null!;
+        [ForeignKey("PositionId")]
+        public virtual ProjectPosition? Position { get; set; }
 
-    public virtual User User { get; set; } = null!;
+        [ForeignKey("UserId")]
+        public virtual User? User { get; set; }
+    }
 }

@@ -46,130 +46,78 @@ public virtual DbSet<Review> Reviews { get; set; }
 public virtual DbSet<Notification> Notifications { get; set; }
 public virtual DbSet<Message> Messages { get; set; }
 public virtual DbSet<Report> Reports { get; set; }
+
     // ❌ ĐÃ XÓA: Phương thức OnConfiguring đã bị xóa. Ứng dụng sẽ đọc chuỗi kết nối
     // từ Program.cs (builder.Services.AddDbContext)
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {   
-        // Trong file AppDbContext.cs, bên trong hàm OnModelCreating
+    // ============================================
+// PHẦN OnModelCreating ĐÃ SỬA
+// Copy toàn bộ phần này thay thế OnModelCreating hiện tại
+// ============================================
 
-modelBuilder.Entity<Message>(entity =>
-{
-    // Liên kết Message.FromUser (người gửi) với User.MessageFromUsers (danh sách tin nhắn đã gửi)
-    entity.HasOne(m => m.FromUser)
-          .WithMany(u => u.MessageFromUsers) // <-- Phải khớp với tên trong User.cs
-          .HasForeignKey(m => m.FromUserId)
-          .OnDelete(DeleteBehavior.ClientSetNull)
-          .HasConstraintName("FK_Messages_FromUser");
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{   
+    // ==================== MESSAGE ====================
+    modelBuilder.Entity<Message>(entity =>
+    {
+        entity.HasOne(m => m.FromUser)
+              .WithMany(u => u.MessageFromUsers)
+              .HasForeignKey(m => m.FromUserId)
+              .OnDelete(DeleteBehavior.ClientSetNull)
+              .HasConstraintName("FK_Messages_FromUser");
 
-    // Liên kết Message.ToUser (người nhận) với User.MessageToUsers (danh sách tin nhắn đã nhận)
-    entity.HasOne(m => m.ToUser)
-          .WithMany(u => u.MessageToUsers) // <-- Phải khớp với tên trong User.cs
-          .HasForeignKey(m => m.ToUserId)
-          .OnDelete(DeleteBehavior.ClientSetNull)
-          .HasConstraintName("FK_Messages_ToUser");
-});
-        // ... (Giữ nguyên các cấu hình Entity khác) ...
+        entity.HasOne(m => m.ToUser)
+              .WithMany(u => u.MessageToUsers)
+              .HasForeignKey(m => m.ToUserId)
+              .OnDelete(DeleteBehavior.ClientSetNull)
+              .HasConstraintName("FK_Messages_ToUser");
+    });
 
-        // --- CHÚ Ý: CHỈNH SỬA ENTITY USER ---
-        modelBuilder.Entity<User>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__users__3213E83FB30C90E4");
+    // ==================== USER ====================
+    modelBuilder.Entity<User>(entity =>
+    {
+        entity.HasKey(e => e.Id).HasName("PK__users__3213E83FB30C90E4");
+        entity.ToTable("users");
 
-            entity.ToTable("users");
+        entity.HasIndex(e => e.Email, "UQ__users__AB6E6164ED331F57").IsUnique();
+        entity.HasIndex(e => e.Email, "idx_users_email");
+        entity.HasIndex(e => e.Role, "idx_users_role");
+        entity.HasIndex(e => e.Status, "idx_users_status");
 
-            entity.HasIndex(e => e.Email, "UQ__users__AB6E6164ED331F57").IsUnique();
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.AboutMe).HasColumnName("about_me");
+        entity.Property(e => e.Address).HasMaxLength(255).HasColumnName("address");
+        entity.Property(e => e.Avatar).HasMaxLength(255).HasColumnName("avatar");
+        entity.Property(e => e.Birthday).HasColumnName("birthday");
+        entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())").HasColumnName("created_at");
+        entity.Property(e => e.CvFile).HasMaxLength(255).HasColumnName("cv_file");
+        entity.Property(e => e.Email).HasMaxLength(100).HasColumnName("email");
+        entity.Property(e => e.FullName).HasMaxLength(100).HasColumnName("full_name");
+        entity.Property(e => e.Gender).HasMaxLength(10).HasColumnName("gender");
+        entity.Property(e => e.JobTitle).HasMaxLength(100).HasColumnName("job_title");
+        entity.Property(e => e.Phone).HasMaxLength(20).HasColumnName("phone");
+        entity.Property(e => e.Role).HasMaxLength(20).HasDefaultValue("user").HasColumnName("role");
+        entity.Property(e => e.SalaryExpectation).HasColumnName("salary_expectation");
+        entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("active").HasColumnName("status");
+        entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())").HasColumnName("updated_at");
+    });
 
-            entity.HasIndex(e => e.Email, "idx_users_email");
+    // ==================== SKILL ====================
+    modelBuilder.Entity<Skill>(entity =>
+    {
+        entity.ToTable("skills");
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.Name).HasColumnName("name");
+        entity.Property(e => e.Category).HasColumnName("category");
+        entity.Property(e => e.Icon).HasColumnName("icon");
+        entity.Property(e => e.Popularity).HasColumnName("popularity");
+        entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+    });
 
-            entity.HasIndex(e => e.Role, "idx_users_role");
-
-            entity.HasIndex(e => e.Status, "idx_users_status");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.AboutMe).HasColumnName("about_me");
-            entity.Property(e => e.Address)
-                .HasMaxLength(255)
-                .HasColumnName("address");
-            entity.Property(e => e.Avatar)
-                .HasMaxLength(255)
-                .HasColumnName("avatar");
-            entity.Property(e => e.Birthday).HasColumnName("birthday");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnName("created_at");
-            entity.Property(e => e.CvFile)
-                .HasMaxLength(255)
-                .HasColumnName("cv_file");
-            entity.Property(e => e.Email)
-                .HasMaxLength(100)
-                .HasColumnName("email");
-            entity.Property(e => e.FullName)
-                .HasMaxLength(100)
-                .HasColumnName("full_name");
-            entity.Property(e => e.Gender)
-                .HasMaxLength(10)
-                .HasColumnName("gender");
-            entity.Property(e => e.JobTitle)
-                .HasMaxLength(100)
-                .HasColumnName("job_title");
-
-            // ❌ ĐÃ XÓA DÒNG GÂY LỖI CS1061:
-            // entity.Property(e => e.Password)
-            //     .HasMaxLength(255)
-            //     .HasColumnName("password"); 
-
-            // ✅ BỔ SUNG CẤU HÌNH CHO 2 TRƯỜNG MỚI (nếu cần đặt tên cột khác)
-            // entity.Property(e => e.PasswordHash) 
-            //     .HasColumnName("password_hash");
-            // entity.Property(e => e.PasswordSalt)
-            //     .HasColumnName("password_salt");
-
-            entity.Property(e => e.Phone)
-                .HasMaxLength(20)
-                .HasColumnName("phone");
-            entity.Property(e => e.Role)
-                .HasMaxLength(20)
-                .HasDefaultValue("user")
-                .HasColumnName("role");
-            entity.Property(e => e.SalaryExpectation).HasColumnName("salary_expectation");
-            entity.Property(e => e.Status)
-                .HasMaxLength(20)
-                .HasDefaultValue("active")
-                .HasColumnName("status");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnName("updated_at");
-                        // Thêm vào cuối phương thức OnModelCreating, trước OnModelCreatingPartial
-        modelBuilder.Entity<Company>(entity =>
-        {
-            entity.ToTable("companies");
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.Name).HasMaxLength(200).HasColumnName("name");
-            entity.Property(e => e.Logo).HasMaxLength(255).HasColumnName("logo");
-            entity.Property(e => e.Description).HasColumnName("description");
-            entity.Property(e => e.Website).HasMaxLength(255).HasColumnName("website");
-            entity.Property(e => e.Industry).HasMaxLength(100).HasColumnName("industry");
-            entity.Property(e => e.Size).HasMaxLength(50).HasColumnName("size");
-            entity.Property(e => e.FoundedYear).HasColumnName("founded_year");
-            entity.Property(e => e.VerificationStatus).HasMaxLength(20).HasDefaultValue("pending").HasColumnName("verification_status");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())").HasColumnName("created_at");
-            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
-
-            entity.HasOne(d => d.User).WithOne(p => p.Company)
-                .HasForeignKey<Company>(d => d.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-        });
-
-        // ... (Giữ nguyên các cấu hình Entity khác) ...
-
-        modelBuilder.Entity<UserSkill>(entity =>
+    // ==================== USER SKILL ====================
+    modelBuilder.Entity<UserSkill>(entity =>
     {
         entity.ToTable("user_skills");
-
-        // Map tên cột
         entity.Property(e => e.Id).HasColumnName("id");
         entity.Property(e => e.UserId).HasColumnName("user_id");
         entity.Property(e => e.SkillId).HasColumnName("skill_id");
@@ -180,216 +128,295 @@ modelBuilder.Entity<Message>(entity =>
         entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
     });
 
-        modelBuilder.Entity<Skill>(entity =>
-        {
-            entity.ToTable("skills");
+    // ==================== COMPANY ====================
+    modelBuilder.Entity<Company>(entity =>
+    {
+        entity.ToTable("companies");
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.UserId).HasColumnName("user_id");
+        entity.Property(e => e.Name).HasMaxLength(200).HasColumnName("name");
+        entity.Property(e => e.Logo).HasMaxLength(255).HasColumnName("logo");
+        entity.Property(e => e.Description).HasColumnName("description");
+        entity.Property(e => e.Website).HasMaxLength(255).HasColumnName("website");
+        entity.Property(e => e.Industry).HasMaxLength(100).HasColumnName("industry");
+        entity.Property(e => e.Size).HasMaxLength(50).HasColumnName("size");
+        entity.Property(e => e.FoundedYear).HasColumnName("founded_year");
+        entity.Property(e => e.VerificationStatus).HasMaxLength(20).HasDefaultValue("pending").HasColumnName("verification_status");
+        entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())").HasColumnName("created_at");
+        entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
 
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Name).HasColumnName("name");
-            entity.Property(e => e.Category).HasColumnName("category");
-            entity.Property(e => e.Icon).HasColumnName("icon");
-            entity.Property(e => e.Popularity).HasColumnName("popularity");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-        });
-        // ============================================
-        // THÊM VÀO CUỐI OnModelCreating()
-        // TRƯỚC DÒNG: OnModelCreatingPartial(modelBuilder);
-        // ============================================
+        entity.HasOne(d => d.User).WithOne(p => p.Company)
+            .HasForeignKey<Company>(d => d.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+    });
 
-        // ==================== COMPANY VERIFICATION ====================
-        // ==================== COMPANY VERIFICATION ====================
-        // THAY THẾ đoạn cũ bằng code này
-        modelBuilder.Entity<CompanyVerification>(entity =>
-        {
-            entity.ToTable("company_verifications");
+    // ==================== COMPANY LOCATION ====================
+    modelBuilder.Entity<CompanyLocation>(entity =>
+    {
+        entity.ToTable("company_locations");
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.CompanyId).HasColumnName("company_id");
+        entity.Property(e => e.Address).HasColumnName("address");
+        entity.Property(e => e.City).HasColumnName("city");
+        entity.Property(e => e.Country).HasColumnName("country");
+        entity.Property(e => e.IsHeadquarter).HasColumnName("is_headquarter");
+        entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+    });
 
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CompanyId).HasColumnName("company_id");
+    // ==================== COMPANY VERIFICATION ====================
+    modelBuilder.Entity<CompanyVerification>(entity =>
+    {
+        entity.ToTable("company_verifications");
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.CompanyId).HasColumnName("company_id");
+        entity.Property(e => e.VerifiedBy).HasColumnName("verified_by");
+        entity.Property(e => e.DocumentType).HasMaxLength(50).HasColumnName("document_type");
+        entity.Property(e => e.DocumentUrl).HasMaxLength(255).HasColumnName("document_url");
+        entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("pending").HasColumnName("status");
+        entity.Property(e => e.Notes).HasColumnName("notes");
+        entity.Property(e => e.SubmittedAt).HasDefaultValueSql("(getdate())").HasColumnName("submitted_at");
+        entity.Property(e => e.VerifiedAt).HasColumnName("verified_at");
 
-            // ⚠️ Map VerifiedBy vào cột verified_by (cột mới)
-            entity.Property(e => e.VerifiedBy).HasColumnName("verified_by");
+        entity.HasOne(d => d.Company).WithMany(p => p.CompanyVerifications)
+            .HasForeignKey(d => d.CompanyId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            entity.Property(e => e.DocumentType).HasMaxLength(50).HasColumnName("document_type");
-            entity.Property(e => e.DocumentUrl).HasMaxLength(255).HasColumnName("document_url");
-            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("pending").HasColumnName("status");
-            entity.Property(e => e.Notes).HasColumnName("notes");
-            entity.Property(e => e.SubmittedAt).HasDefaultValueSql("(getdate())").HasColumnName("submitted_at");
+        entity.HasOne(d => d.VerifiedByNavigation).WithMany(p => p.CompanyVerifications)
+            .HasForeignKey(d => d.VerifiedBy)
+            .OnDelete(DeleteBehavior.NoAction);
+    });
 
-            // ⚠️ Map VerifiedAt vào cột verified_at (cột mới)
-            entity.Property(e => e.VerifiedAt).HasColumnName("verified_at");
+    // ==================== JOB ====================
+    modelBuilder.Entity<Job>(entity =>
+    {
+        entity.ToTable("jobs");
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.CompanyId).HasColumnName("company_id");
+        entity.Property(e => e.Title).HasMaxLength(200).HasColumnName("title");
+        entity.Property(e => e.Description).HasColumnName("description");
+        entity.Property(e => e.Requirements).HasColumnName("requirements");
+        entity.Property(e => e.Benefits).HasColumnName("benefits");
+        entity.Property(e => e.Type).HasMaxLength(20).HasColumnName("type");
+        entity.Property(e => e.Level).HasMaxLength(20).HasColumnName("level");
+        entity.Property(e => e.SalaryMin).HasColumnName("salary_min");
+        entity.Property(e => e.SalaryMax).HasColumnName("salary_max");
+        entity.Property(e => e.SalaryCurrency).HasMaxLength(10).HasDefaultValue("VND").HasColumnName("salary_currency");
+        entity.Property(e => e.Location).HasMaxLength(255).HasColumnName("location");
+        entity.Property(e => e.LocationType).HasMaxLength(20).HasColumnName("location_type");
+        entity.Property(e => e.Positions).HasDefaultValue(1).HasColumnName("positions");
+        entity.Property(e => e.Deadline).HasColumnName("deadline");
+        entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("open").HasColumnName("status");
+        entity.Property(e => e.Views).HasDefaultValue(0).HasColumnName("views");
+        entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())").HasColumnName("created_at");
+        entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())").HasColumnName("updated_at");
 
-            // Relationships
-            entity.HasOne(d => d.Company).WithMany(p => p.CompanyVerifications)
-                .HasForeignKey(d => d.CompanyId)
-                .OnDelete(DeleteBehavior.Cascade);
+        entity.HasOne(d => d.Company).WithMany(p => p.Jobs)
+            .HasForeignKey(d => d.CompanyId)
+            .OnDelete(DeleteBehavior.Cascade);
+    });
 
-            entity.HasOne(d => d.VerifiedByNavigation).WithMany(p => p.CompanyVerifications)
-                .HasForeignKey(d => d.VerifiedBy)
-                .OnDelete(DeleteBehavior.NoAction);
-        });
-        modelBuilder.Entity<CompanyLocation>(entity =>
-        {
-            // 1. Ánh xạ tên bảng
-            entity.ToTable("company_locations");
+    // ==================== JOB SKILL ====================
+    modelBuilder.Entity<JobSkill>(entity =>
+    {
+        entity.ToTable("job_skills");
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.JobId).HasColumnName("job_id");
+        entity.Property(e => e.SkillId).HasColumnName("skill_id");
+        entity.Property(e => e.IsRequired).HasDefaultValue(true).HasColumnName("is_required");
+        entity.Property(e => e.Level).HasMaxLength(20).HasColumnName("level");
 
-            // 2. (Khuyên dùng) Ánh xạ luôn các cột
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.Address).HasColumnName("address");
-            entity.Property(e => e.City).HasColumnName("city");
-            entity.Property(e => e.Country).HasColumnName("country");
-            entity.Property(e => e.IsHeadquarter).HasColumnName("is_headquarter");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-        });
-        // File: Data/AppDbContext.cs (Trong OnModelCreating)
+        entity.HasOne(d => d.Job).WithMany(p => p.JobSkills)
+            .HasForeignKey(d => d.JobId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        // ... (Giữ nguyên các cấu hình Entity khác) ...
-    
-        // =============================================================
-        // CẤU HÌNH Job (FIX LỖI 500 MỚI)
-        // =============================================================
-        modelBuilder.Entity<Job>(entity =>
-        {
-            // 1. Ánh xạ tên bảng
-            entity.ToTable("jobs");
+        entity.HasOne(d => d.Skill).WithMany(p => p.JobSkills)
+            .HasForeignKey(d => d.SkillId)
+            .OnDelete(DeleteBehavior.Cascade);
+    });
 
-            // 2. Ánh xạ tên cột (Dựa trên lỗi của bạn)
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CompanyId).HasColumnName("company_id");
-            entity.Property(e => e.Title).HasColumnName("title");
-            entity.Property(e => e.Description).HasColumnName("description");
-            entity.Property(e => e.Requirements).HasColumnName("requirements");
-            entity.Property(e => e.Benefits).HasColumnName("benefits");
-            entity.Property(e => e.Type).HasColumnName("type");
-            entity.Property(e => e.Level).HasColumnName("level");
-            entity.Property(e => e.SalaryMin).HasColumnName("salary_min");
-            entity.Property(e => e.SalaryMax).HasColumnName("salary_max");
-            entity.Property(e => e.SalaryCurrency).HasColumnName("salary_currency");
-            entity.Property(e => e.Location).HasColumnName("location");
-            entity.Property(e => e.LocationType).HasColumnName("location_type");
-            entity.Property(e => e.Positions).HasColumnName("positions");
-            entity.Property(e => e.Deadline).HasColumnName("deadline");
-            entity.Property(e => e.Status).HasColumnName("status");
-            entity.Property(e => e.Views).HasColumnName("views");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
-        });
+    // ==================== SAVED JOB ====================
+    modelBuilder.Entity<SavedJob>(entity =>
+    {
+        entity.ToTable("saved_jobs");
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.UserId).HasColumnName("user_id");
+        entity.Property(e => e.JobId).HasColumnName("job_id");
+        entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())").HasColumnName("created_at");
+
+        entity.HasOne(d => d.User).WithMany(p => p.SavedJobs)
+            .HasForeignKey(d => d.UserId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        entity.HasOne(d => d.Job).WithMany(p => p.SavedJobs)
+            .HasForeignKey(d => d.JobId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        entity.HasIndex(e => new { e.UserId, e.JobId }).IsUnique();
+    });
+
+    // ==================== APPLICATION ====================
+    modelBuilder.Entity<Application>(entity =>
+    {
+        entity.ToTable("applications");
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.UserId).HasColumnName("user_id");
+        entity.Property(e => e.JobId).HasColumnName("job_id");
+        entity.Property(e => e.CoverLetter).HasColumnName("cover_letter");
+        entity.Property(e => e.CvFile).HasMaxLength(255).HasColumnName("cv_file");
+        entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("pending").HasColumnName("status");
+        entity.Property(e => e.RejectReason).HasColumnName("reject_reason");
+        entity.Property(e => e.AppliedAt).HasDefaultValueSql("(getdate())").HasColumnName("applied_at");
+        entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())").HasColumnName("updated_at");
+
+        entity.HasOne(d => d.User).WithMany(p => p.Applications)
+            .HasForeignKey(d => d.UserId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        entity.HasOne(d => d.Job).WithMany(p => p.Applications)
+            .HasForeignKey(d => d.JobId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        entity.HasIndex(e => new { e.UserId, e.JobId }).IsUnique();
+    });
+
+    // ==================== PROJECT ====================
+    modelBuilder.Entity<Project>(entity =>
+    {
+        entity.ToTable("projects");
+        entity.HasKey(e => e.Id);
         
-    // ============================================
-// THÊM VÀO CUỐI OnModelCreating()
-// TRƯỚC DÒNG: OnModelCreatingPartial(modelBuilder);
-// ============================================
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.UserId).HasColumnName("user_id");
+        entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(200).IsRequired();
+        entity.Property(e => e.Description).HasColumnName("description").IsRequired();
+        entity.Property(e => e.Type).HasColumnName("type").HasMaxLength(20);
+        entity.Property(e => e.DurationMonths).HasColumnName("duration_months");
+        entity.Property(e => e.LocationType).HasColumnName("location_type").HasMaxLength(20);
+        entity.Property(e => e.CompensationType).HasColumnName("compensation_type").HasMaxLength(20);
+        entity.Property(e => e.CompensationDetails).HasColumnName("compensation_details");
+        entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("open");
+        entity.Property(e => e.Views).HasColumnName("views").HasDefaultValue(0);
+        entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+        entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+        
+        entity.HasOne(p => p.User)
+            .WithMany()
+            .HasForeignKey(p => p.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+            
+        // entity.HasIndex(e => e.UserId).HasDatabaseName("idx_projects_user");
+        entity.HasIndex(e => e.Status).HasDatabaseName("idx_projects_status");
+        entity.HasIndex(e => e.Type).HasDatabaseName("idx_projects_type");
+    });
 
-// ==================== JOB ====================
-modelBuilder.Entity<Job>(entity =>
-{
-    entity.ToTable("jobs");
+    // ==================== PROJECT POSITION ====================
+    modelBuilder.Entity<ProjectPosition>(entity =>
+    {
+        entity.ToTable("project_positions");
+        entity.HasKey(e => e.Id);
+        
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.ProjectId).HasColumnName("project_id");
+        entity.Property(e => e.Role).HasColumnName("role").HasMaxLength(100).IsRequired();
+        entity.Property(e => e.Quantity).HasColumnName("quantity").HasDefaultValue(1);
+        entity.Property(e => e.Requirements).HasColumnName("requirements");
+        entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("open");
+        entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+        
+        entity.HasOne(pp => pp.Project)
+            .WithMany()
+            .HasForeignKey(pp => pp.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+    });
+
+    // ==================== PROJECT POSITION SKILL ====================
+    modelBuilder.Entity<ProjectPositionSkill>(entity =>
+    {
+        entity.ToTable("project_position_skills");
+        entity.HasKey(e => e.Id);
+        
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.PositionId).HasColumnName("position_id");
+        entity.Property(e => e.SkillId).HasColumnName("skill_id");
+        entity.Property(e => e.IsRequired).HasColumnName("is_required").HasDefaultValue(true);
+        
+        entity.HasOne(pps => pps.Position)
+            .WithMany()
+            .HasForeignKey(pps => pps.PositionId)
+            .OnDelete(DeleteBehavior.Cascade);
+            
+        entity.HasOne(pps => pps.Skill)
+            .WithMany()
+            .HasForeignKey(pps => pps.SkillId)
+            .OnDelete(DeleteBehavior.Cascade);
+    });
+
+    // ==================== PROJECT APPLICATION ====================
+    modelBuilder.Entity<ProjectApplication>(entity =>
+    {
+        entity.ToTable("project_applications");
+        entity.HasKey(e => e.Id);
+        
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.ProjectId).HasColumnName("project_id");
+        entity.Property(e => e.PositionId).HasColumnName("position_id");
+        entity.Property(e => e.UserId).HasColumnName("user_id");
+        entity.Property(e => e.CoverLetter).HasColumnName("cover_letter");
+        entity.Property(e => e.PortfolioLink).HasColumnName("portfolio_link").HasMaxLength(500);
+        entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("pending");
+        entity.Property(e => e.AppliedAt).HasColumnName("applied_at");
+        entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+        
+        entity.HasOne(pa => pa.Project)
+            .WithMany()
+            .HasForeignKey(pa => pa.ProjectId)
+            .OnDelete(DeleteBehavior.NoAction);
+            
+        entity.HasOne(pa => pa.Position)
+            .WithMany()
+            .HasForeignKey(pa => pa.PositionId)
+            .OnDelete(DeleteBehavior.NoAction);
+            
+        entity.HasOne(pa => pa.User)
+            .WithMany()
+            .HasForeignKey(pa => pa.UserId)
+            .OnDelete(DeleteBehavior.NoAction);
+    });
+
+    // ==================== PROJECT MEMBER ====================
+    modelBuilder.Entity<ProjectMember>(entity =>
+    {
+        entity.ToTable("project_members");
+        entity.HasKey(e => e.Id);
+        
+        entity.Property(e => e.Id).HasColumnName("id");
+        entity.Property(e => e.ProjectId).HasColumnName("project_id");
+        entity.Property(e => e.UserId).HasColumnName("user_id");
+        entity.Property(e => e.PositionId).HasColumnName("position_id");
+        entity.Property(e => e.RoleType).HasColumnName("role_type").HasMaxLength(20).HasDefaultValue("member");
+        entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("active");
+        entity.Property(e => e.JoinedAt).HasColumnName("joined_at");
+        entity.Property(e => e.LeftAt).HasColumnName("left_at");
+        
+        entity.HasOne(pm => pm.Project)
+            .WithMany()
+            .HasForeignKey(pm => pm.ProjectId)
+            .OnDelete(DeleteBehavior.NoAction);
+            
+        entity.HasOne(pm => pm.User)
+            .WithMany()
+            .HasForeignKey(pm => pm.UserId)
+            .OnDelete(DeleteBehavior.NoAction);
+            
+        entity.HasOne(pm => pm.Position)
+            .WithMany()
+            .HasForeignKey(pm => pm.PositionId)
+            .OnDelete(DeleteBehavior.NoAction)
+            .IsRequired(false);
+    });
     
-    entity.Property(e => e.Id).HasColumnName("id");
-    entity.Property(e => e.CompanyId).HasColumnName("company_id");
-    entity.Property(e => e.Title).HasMaxLength(200).HasColumnName("title");
-    entity.Property(e => e.Description).HasColumnName("description");
-    entity.Property(e => e.Requirements).HasColumnName("requirements");
-    entity.Property(e => e.Benefits).HasColumnName("benefits");
-    entity.Property(e => e.Type).HasMaxLength(20).HasColumnName("type");
-    entity.Property(e => e.Level).HasMaxLength(20).HasColumnName("level");
-    entity.Property(e => e.SalaryMin).HasColumnName("salary_min");
-    entity.Property(e => e.SalaryMax).HasColumnName("salary_max");
-    entity.Property(e => e.SalaryCurrency).HasMaxLength(10).HasDefaultValue("VND").HasColumnName("salary_currency");
-    entity.Property(e => e.Location).HasMaxLength(255).HasColumnName("location");
-    entity.Property(e => e.LocationType).HasMaxLength(20).HasColumnName("location_type");
-    entity.Property(e => e.Positions).HasDefaultValue(1).HasColumnName("positions");
-    entity.Property(e => e.Deadline).HasColumnName("deadline");
-    entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("open").HasColumnName("status");
-    entity.Property(e => e.Views).HasDefaultValue(0).HasColumnName("views");
-    entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())").HasColumnName("created_at");
-    entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())").HasColumnName("updated_at");
-
-    // Relationships
-    entity.HasOne(d => d.Company).WithMany(p => p.Jobs)
-        .HasForeignKey(d => d.CompanyId)
-        .OnDelete(DeleteBehavior.Cascade);
-});
-
-// ==================== JOB SKILL ====================
-modelBuilder.Entity<JobSkill>(entity =>
-{
-    entity.ToTable("job_skills");
-    
-    entity.Property(e => e.Id).HasColumnName("id");
-    entity.Property(e => e.JobId).HasColumnName("job_id");
-    entity.Property(e => e.SkillId).HasColumnName("skill_id");
-    entity.Property(e => e.IsRequired).HasDefaultValue(true).HasColumnName("is_required");
-    entity.Property(e => e.Level).HasMaxLength(20).HasColumnName("level");
-
-    // Relationships
-    entity.HasOne(d => d.Job).WithMany(p => p.JobSkills)
-        .HasForeignKey(d => d.JobId)
-        .OnDelete(DeleteBehavior.Cascade);
-
-    entity.HasOne(d => d.Skill).WithMany(p => p.JobSkills)
-        .HasForeignKey(d => d.SkillId)
-        .OnDelete(DeleteBehavior.Cascade);
-});
-
-        // ==================== SAVED JOB ====================
-        modelBuilder.Entity<SavedJob>(entity =>
-        {
-            entity.ToTable("saved_jobs");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.JobId).HasColumnName("job_id");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())").HasColumnName("created_at");
-
-            // Relationships
-            entity.HasOne(d => d.User).WithMany(p => p.SavedJobs)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            entity.HasOne(d => d.Job).WithMany(p => p.SavedJobs)
-                .HasForeignKey(d => d.JobId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            // Unique constraint
-            entity.HasIndex(e => new { e.UserId, e.JobId }).IsUnique();
-        });
-// ============================================
-// THÊM VÀO CUỐI OnModelCreating()
-// SAU PHẦN JOB, JOB_SKILLS, SAVED_JOBS
-// TRƯỚC DÒNG: OnModelCreatingPartial(modelBuilder);
-// ============================================
-
-// ==================== APPLICATION ====================
-modelBuilder.Entity<Application>(entity =>
-{
-    entity.ToTable("applications");
-    
-    entity.Property(e => e.Id).HasColumnName("id");
-    entity.Property(e => e.UserId).HasColumnName("user_id");
-    entity.Property(e => e.JobId).HasColumnName("job_id");
-    entity.Property(e => e.CoverLetter).HasColumnName("cover_letter");
-    entity.Property(e => e.CvFile).HasMaxLength(255).HasColumnName("cv_file");
-    entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("pending").HasColumnName("status");
-    entity.Property(e => e.RejectReason).HasColumnName("reject_reason");
-    entity.Property(e => e.AppliedAt).HasDefaultValueSql("(getdate())").HasColumnName("applied_at");
-    entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())").HasColumnName("updated_at");
-
-    // Relationships
-    entity.HasOne(d => d.User).WithMany(p => p.Applications)
-        .HasForeignKey(d => d.UserId)
-        .OnDelete(DeleteBehavior.NoAction);
-
-    entity.HasOne(d => d.Job).WithMany(p => p.Applications)
-        .HasForeignKey(d => d.JobId)
-        .OnDelete(DeleteBehavior.NoAction);
-
-    // Unique constraint
-    entity.HasIndex(e => new { e.UserId, e.JobId }).IsUnique();
-});
-// ... (Giữ nguyên các cấu hình Entity khác) ...
-        OnModelCreatingPartial(modelBuilder);
-    }   
+    OnModelCreatingPartial(modelBuilder);
+}
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

@@ -1,31 +1,49 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TimDongDoi.API.Models;
-
-public partial class ProjectMember
+namespace TimDongDoi.API.Models
 {
-    public int Id { get; set; }
+    [Table("project_members")]
+    public class ProjectMember
+    {
+        [Key]
+        [Column("id")]
+        public int Id { get; set; }
 
-    public int ProjectId { get; set; }
+        [Required]
+        [Column("project_id")]
+        public int ProjectId { get; set; }
 
-    public int UserId { get; set; }
+        [Required]
+        [Column("user_id")]
+        public int UserId { get; set; }
 
-    public int? PositionId { get; set; }
+        [Column("position_id")]
+        public int? PositionId { get; set; }
 
-    public string? RoleType { get; set; }
+        [MaxLength(20)]
+        [Column("role_type")]
+        public string RoleType { get; set; } = "member";
 
-    public string? Status { get; set; }
+        [MaxLength(20)]
+        [Column("status")]
+        public string Status { get; set; } = "active";
 
-    public DateOnly? JoinedAt { get; set; }
+        [Column("joined_at")]
+        public DateOnly JoinedAt { get; set; }
 
-    public DateOnly? LeftAt { get; set; }
+        [Column("left_at")]
+        public DateOnly? LeftAt { get; set; }
 
-    public virtual ProjectPosition? Position { get; set; }
+        // Navigation properties
+        [ForeignKey("ProjectId")]
+        public virtual Project? Project { get; set; }
 
-    public virtual Project Project { get; set; } = null!;
+        [ForeignKey("UserId")]
+        public virtual User? User { get; set; }
 
-    public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
-
-    public virtual User User { get; set; } = null!;
+        [ForeignKey("PositionId")]
+        public virtual ProjectPosition? Position { get; set; }
+    }
 }

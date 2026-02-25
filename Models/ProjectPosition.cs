@@ -1,29 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TimDongDoi.API.Models;
-
-public partial class ProjectPosition
+namespace TimDongDoi.API.Models
 {
-    public int Id { get; set; }
+    [Table("project_positions")]
+    public class ProjectPosition
+    {
+        [Key]
+        [Column("id")]
+        public int Id { get; set; }
 
-    public int ProjectId { get; set; }
+        [Required]
+        [Column("project_id")]
+        public int ProjectId { get; set; }
 
-    public string Role { get; set; } = null!;
+        [Required]
+        [MaxLength(100)]
+        [Column("role")]
+        public string Role { get; set; } = string.Empty;
 
-    public int? Quantity { get; set; }
+        [Column("quantity")]
+        public int Quantity { get; set; } = 1;
 
-    public string? Requirements { get; set; }
+        [Column("requirements")]
+        public string? Requirements { get; set; }
 
-    public string? Status { get; set; }
+        [MaxLength(20)]
+        [Column("status")]
+        public string Status { get; set; } = "open";
 
-    public DateTime? CreatedAt { get; set; }
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; }
 
-    public virtual Project Project { get; set; } = null!;
+        // Navigation property
+        [ForeignKey("ProjectId")]
+        public virtual Project? Project { get; set; }
 
-    public virtual ICollection<ProjectApplication> ProjectApplications { get; set; } = new List<ProjectApplication>();
-
-    public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
-
-    public virtual ICollection<ProjectPositionSkill> ProjectPositionSkills { get; set; } = new List<ProjectPositionSkill>();
+        // Navigation properties (added based on your other files)
+        public virtual ICollection<ProjectPositionSkill> ProjectPositionSkills { get; set; } = new List<ProjectPositionSkill>();
+        public virtual ICollection<ProjectApplication> ProjectApplications { get; set; } = new List<ProjectApplication>();
+        public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
+    }
 }

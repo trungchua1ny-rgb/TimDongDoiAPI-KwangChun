@@ -1,19 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TimDongDoi.API.Models;
-
-public partial class ProjectPositionSkill
+namespace TimDongDoi.API.Models
 {
-    public int Id { get; set; }
+    [Table("project_position_skills")]
+    public class ProjectPositionSkill
+    {
+        [Key]
+        [Column("id")]
+        public int Id { get; set; }
 
-    public int PositionId { get; set; }
+        [Required]
+        [Column("position_id")]
+        public int PositionId { get; set; }
 
-    public int SkillId { get; set; }
+        [Required]
+        [Column("skill_id")]
+        public int SkillId { get; set; }
 
-    public bool? IsRequired { get; set; }
+        [Column("is_required")]
+        public bool IsRequired { get; set; } = true;
 
-    public virtual ProjectPosition Position { get; set; } = null!;
+        // Navigation properties
+        [ForeignKey("PositionId")]
+        public virtual ProjectPosition? Position { get; set; }
 
-    public virtual Skill Skill { get; set; } = null!;
+        [ForeignKey("SkillId")]
+        public virtual Skill? Skill { get; set; }
+    }
 }

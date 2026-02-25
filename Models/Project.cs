@@ -1,43 +1,68 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TimDongDoi.API.Models;
-
-public partial class Project
+namespace TimDongDoi.API.Models
 {
-    public int Id { get; set; }
+    [Table("projects")]
+    public class Project
+    {
+        [Key]
+        [Column("id")]
+        public int Id { get; set; }
 
-    public int UserId { get; set; }
+        [Required]
+        [Column("user_id")]
+        public int UserId { get; set; }
 
-    public string Title { get; set; } = null!;
+        [Required]
+        [MaxLength(200)]
+        [Column("title")]
+        public string Title { get; set; } = string.Empty;
 
-    public string Description { get; set; } = null!;
+        [Required]
+        [Column("description")]
+        public string Description { get; set; } = string.Empty;
 
-    public string? Type { get; set; }
+        [MaxLength(20)]
+        [Column("type")]
+        public string Type { get; set; } = string.Empty;
 
-    public int? DurationMonths { get; set; }
+        [Column("duration_months")]
+        public int? DurationMonths { get; set; }
 
-    public string? LocationType { get; set; }
+        [MaxLength(20)]
+        [Column("location_type")]
+        public string LocationType { get; set; } = string.Empty;
 
-    public string? CompensationType { get; set; }
+        [MaxLength(20)]
+        [Column("compensation_type")]
+        public string CompensationType { get; set; } = string.Empty;
 
-    public string? CompensationDetails { get; set; }
+        [Column("compensation_details")]
+        public string? CompensationDetails { get; set; }
 
-    public string? Status { get; set; }
+        [MaxLength(20)]
+        [Column("status")]
+        public string Status { get; set; } = "open";
 
-    public int? Views { get; set; }
+        [Column("views")]
+        public int Views { get; set; } = 0;
 
-    public DateTime? CreatedAt { get; set; }
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; }
 
-    public DateTime? UpdatedAt { get; set; }
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; }
 
-    public virtual ICollection<ProjectApplication> ProjectApplications { get; set; } = new List<ProjectApplication>();
+        // Navigation property
+        [ForeignKey("UserId")]
+        public virtual User? User { get; set; }
 
-    public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
-
-    public virtual ICollection<ProjectPosition> ProjectPositions { get; set; } = new List<ProjectPosition>();
-
-    public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
-
-    public virtual User User { get; set; } = null!;
+        // Navigation properties (added based on your other files)
+        public virtual ICollection<ProjectApplication> ProjectApplications { get; set; } = new List<ProjectApplication>();
+        public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
+        public virtual ICollection<ProjectPosition> ProjectPositions { get; set; } = new List<ProjectPosition>();
+    }
 }
