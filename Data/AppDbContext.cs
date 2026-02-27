@@ -115,19 +115,25 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
     });
 
     // ==================== USER SKILL ====================
-    modelBuilder.Entity<UserSkill>(entity =>
+ modelBuilder.Entity<UserSkill>(entity =>
     {
         entity.ToTable("user_skills");
         entity.Property(e => e.Id).HasColumnName("id");
         entity.Property(e => e.UserId).HasColumnName("user_id");
-        entity.Property(e => e.SkillId).HasColumnName("skill_id");
+        entity.Property(e => e.SkillId).HasColumnName("skill_id"); 
         entity.Property(e => e.Level).HasColumnName("level");
-        entity.Property(e => e.YearsExperience).HasColumnName("years_experience");
+        
+        // Sửa lỗi cảnh báo thập phân
+        entity.Property(e => e.YearsExperience).HasColumnName("years_experience").HasColumnType("decimal(18, 2)"); 
+        
         entity.Property(e => e.Description).HasColumnName("description");
         entity.Property(e => e.CreatedAt).HasColumnName("created_at");
         entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
-    });
 
+        // Dòng này triệt tiêu lỗi SkillId1
+        entity.HasOne(us => us.Skill).WithMany().HasForeignKey(us => us.SkillId).OnDelete(DeleteBehavior.Cascade);
+        entity.HasOne(us => us.User).WithMany(u => u.UserSkills).HasForeignKey(us => us.UserId).OnDelete(DeleteBehavior.Cascade);
+    });
     // ==================== COMPANY ====================
     modelBuilder.Entity<Company>(entity =>
     {
@@ -254,6 +260,23 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
         entity.HasIndex(e => new { e.UserId, e.JobId }).IsUnique();
     });
 
+    // ==================== FIX LỖI CASCADE CHO JOB TEST ====================
+    modelBuilder.Entity<JobTest>(entity =>
+    {
+        entity.ToTable("JobTests");
+        
+        // Tắt xóa dây chuyền từ Job -> JobTest
+        entity.HasOne(d => d.Job)
+              .WithMany() // Để trống bên trong cho an toàn (tránh lỗi nếu Model Job không có List)
+              .HasForeignKey(d => d.JobId)
+              .OnDelete(DeleteBehavior.NoAction);
+
+        // Tắt xóa dây chuyền từ Test -> JobTest
+        entity.HasOne(d => d.Test)
+              .WithMany()
+              .HasForeignKey(d => d.TestId)
+              .OnDelete(DeleteBehavior.NoAction);
+    });
     // ==================== APPLICATION ====================
     modelBuilder.Entity<Application>(entity =>
     {
@@ -279,14 +302,15 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
         entity.HasIndex(e => new { e.UserId, e.JobId }).IsUnique();
     });
 
-    // ==================== PROJECT ====================
+
+// ==================== PROJECT ====================
     modelBuilder.Entity<Project>(entity =>
     {
         entity.ToTable("projects");
         entity.HasKey(e => e.Id);
         
         entity.Property(e => e.Id).HasColumnName("id");
-        entity.Property(e => e.UserId).HasColumnName("user_id");
+        entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
         entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(200).IsRequired();
         entity.Property(e => e.Description).HasColumnName("description").IsRequired();
         entity.Property(e => e.Type).HasColumnName("type").HasMaxLength(20);
@@ -299,121 +323,121 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
         entity.Property(e => e.CreatedAt).HasColumnName("created_at");
         entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
         
+        entity.HasIndex(e => e.Status);
+        entity.HasIndex(e => e.Type);
+        entity.HasIndex(e => e.UserId);
+
+        // ĐÃ XÓA DÒNG LỖI: entity.Ignore(e => e.User);
+        
+        // THÊM ĐOẠN NÀY ĐỂ FIX LỖI INCLUDE VÀ NHẬN DIỆN KHÓA NGOẠI
         entity.HasOne(p => p.User)
-            .WithMany()
-            .HasForeignKey(p => p.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
-            
-        // entity.HasIndex(e => e.UserId).HasDatabaseName("idx_projects_user");
-        entity.HasIndex(e => e.Status).HasDatabaseName("idx_projects_status");
-        entity.HasIndex(e => e.Type).HasDatabaseName("idx_projects_type");
+              .WithMany(u => u.Projects) // Để trống WithMany() là an toàn nhất nếu Model User không chứa List<Project>
+              .HasForeignKey(p => p.UserId)
+              .OnDelete(DeleteBehavior.Cascade);
     });
 
     // ==================== PROJECT POSITION ====================
-    modelBuilder.Entity<ProjectPosition>(entity =>
-    {
-        entity.ToTable("project_positions");
-        entity.HasKey(e => e.Id);
-        
-        entity.Property(e => e.Id).HasColumnName("id");
-        entity.Property(e => e.ProjectId).HasColumnName("project_id");
-        entity.Property(e => e.Role).HasColumnName("role").HasMaxLength(100).IsRequired();
-        entity.Property(e => e.Quantity).HasColumnName("quantity").HasDefaultValue(1);
-        entity.Property(e => e.Requirements).HasColumnName("requirements");
-        entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("open");
-        entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-        
-        entity.HasOne(pp => pp.Project)
-            .WithMany()
-            .HasForeignKey(pp => pp.ProjectId)
-            .OnDelete(DeleteBehavior.Cascade);
-    });
+  modelBuilder.Entity<ProjectPosition>(entity =>
+{
+    entity.ToTable("project_positions");
+    entity.HasKey(e => e.Id);
+    
+    entity.Property(e => e.Id).HasColumnName("id");
+    entity.Property(e => e.ProjectId).HasColumnName("project_id");
+    entity.Property(e => e.Role).HasColumnName("role").HasMaxLength(100).IsRequired();
+    entity.Property(e => e.Quantity).HasColumnName("quantity").HasDefaultValue(1);
+    entity.Property(e => e.Requirements).HasColumnName("requirements");
+    entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("open");
+    entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+    
+    // XÓA HasOne/WithMany - để EF tự nhận diện
+});
 
     // ==================== PROJECT POSITION SKILL ====================
-    modelBuilder.Entity<ProjectPositionSkill>(entity =>
-    {
-        entity.ToTable("project_position_skills");
-        entity.HasKey(e => e.Id);
-        
-        entity.Property(e => e.Id).HasColumnName("id");
-        entity.Property(e => e.PositionId).HasColumnName("position_id");
-        entity.Property(e => e.SkillId).HasColumnName("skill_id");
-        entity.Property(e => e.IsRequired).HasColumnName("is_required").HasDefaultValue(true);
-        
-        entity.HasOne(pps => pps.Position)
-            .WithMany()
-            .HasForeignKey(pps => pps.PositionId)
-            .OnDelete(DeleteBehavior.Cascade);
-            
-        entity.HasOne(pps => pps.Skill)
-            .WithMany()
-            .HasForeignKey(pps => pps.SkillId)
-            .OnDelete(DeleteBehavior.Cascade);
-    });
+ modelBuilder.Entity<ProjectPositionSkill>(entity =>
+{
+    entity.ToTable("project_position_skills");
+    entity.HasKey(e => e.Id);
+    
+    entity.Property(e => e.Id).HasColumnName("id");
+    entity.Property(e => e.PositionId).HasColumnName("position_id");
+    entity.Property(e => e.SkillId).HasColumnName("skill_id");
+    entity.Property(e => e.IsRequired).HasColumnName("is_required").HasDefaultValue(true);
+    
+    // --- PHẢI CÓ các dòng này để sửa lỗi SkillId1 ---
+
+    // 1. Quan hệ với ProjectPosition (1 Vị trí có nhiều Kỹ năng yêu cầu)
+    entity.HasOne(pps => pps.Position)
+          .WithMany(p => p.ProjectPositionSkills) // Khớp với ICollection trong ProjectPosition.cs
+          .HasForeignKey(pps => pps.PositionId)
+          .OnDelete(DeleteBehavior.Cascade);
+    
+    // 2. Quan hệ với Skill (Cực kỳ quan trọng để triệt tiêu SkillId1)
+    entity.HasOne(pps => pps.Skill)
+          .WithMany() // Nếu file Skill.cs của bạn không có danh sách ngược lại
+          .HasForeignKey(pps => pps.SkillId) // Chỉ định rõ skill_id là khóa ngoại
+          .OnDelete(DeleteBehavior.Cascade);
+});
 
     // ==================== PROJECT APPLICATION ====================
-    modelBuilder.Entity<ProjectApplication>(entity =>
-    {
-        entity.ToTable("project_applications");
-        entity.HasKey(e => e.Id);
-        
-        entity.Property(e => e.Id).HasColumnName("id");
-        entity.Property(e => e.ProjectId).HasColumnName("project_id");
-        entity.Property(e => e.PositionId).HasColumnName("position_id");
-        entity.Property(e => e.UserId).HasColumnName("user_id");
-        entity.Property(e => e.CoverLetter).HasColumnName("cover_letter");
-        entity.Property(e => e.PortfolioLink).HasColumnName("portfolio_link").HasMaxLength(500);
-        entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("pending");
-        entity.Property(e => e.AppliedAt).HasColumnName("applied_at");
-        entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
-        
-        entity.HasOne(pa => pa.Project)
-            .WithMany()
-            .HasForeignKey(pa => pa.ProjectId)
-            .OnDelete(DeleteBehavior.NoAction);
-            
-        entity.HasOne(pa => pa.Position)
-            .WithMany()
-            .HasForeignKey(pa => pa.PositionId)
-            .OnDelete(DeleteBehavior.NoAction);
-            
-        entity.HasOne(pa => pa.User)
-            .WithMany()
-            .HasForeignKey(pa => pa.UserId)
-            .OnDelete(DeleteBehavior.NoAction);
-    });
+   modelBuilder.Entity<ProjectApplication>(entity =>
+{
+    entity.ToTable("project_applications");
+    entity.HasKey(e => e.Id);
+    
+    entity.Property(e => e.Id).HasColumnName("id");
+    entity.Property(e => e.ProjectId).HasColumnName("project_id");
+    entity.Property(e => e.PositionId).HasColumnName("position_id");
+    entity.Property(e => e.UserId).HasColumnName("user_id");
+    entity.Property(e => e.CoverLetter).HasColumnName("cover_letter");
+    entity.Property(e => e.PortfolioLink).HasColumnName("portfolio_link").HasMaxLength(500);
+    entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("pending");
+    entity.Property(e => e.AppliedAt).HasColumnName("applied_at");
+    entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+    
+    // XÓA các HasOne/
+    entity.HasOne(pa => pa.Project)
+              .WithMany(p => p.ProjectApplications)
+              .HasForeignKey(pa => pa.ProjectId)
+              .OnDelete(DeleteBehavior.NoAction);
 
+        entity.HasOne(pa => pa.Position)
+              .WithMany(p => p.ProjectApplications)
+              .HasForeignKey(pa => pa.PositionId)
+              .OnDelete(DeleteBehavior.NoAction);
+
+        entity.HasOne(pa => pa.User)
+              .WithMany(u => u.ProjectApplications)
+              .HasForeignKey(pa => pa.UserId)
+              .OnDelete(DeleteBehavior.NoAction);
+});
     // ==================== PROJECT MEMBER ====================
-    modelBuilder.Entity<ProjectMember>(entity =>
-    {
-        entity.ToTable("project_members");
-        entity.HasKey(e => e.Id);
-        
-        entity.Property(e => e.Id).HasColumnName("id");
-        entity.Property(e => e.ProjectId).HasColumnName("project_id");
-        entity.Property(e => e.UserId).HasColumnName("user_id");
-        entity.Property(e => e.PositionId).HasColumnName("position_id");
-        entity.Property(e => e.RoleType).HasColumnName("role_type").HasMaxLength(20).HasDefaultValue("member");
-        entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("active");
-        entity.Property(e => e.JoinedAt).HasColumnName("joined_at");
-        entity.Property(e => e.LeftAt).HasColumnName("left_at");
-        
+   modelBuilder.Entity<ProjectMember>(entity =>
+{
+    entity.ToTable("project_members");
+    entity.HasKey(e => e.Id);
+    
+    entity.Property(e => e.Id).HasColumnName("id");
+    entity.Property(e => e.ProjectId).HasColumnName("project_id");
+    entity.Property(e => e.UserId).HasColumnName("user_id");
+    entity.Property(e => e.PositionId).HasColumnName("position_id");
+    entity.Property(e => e.RoleType).HasColumnName("role_type").HasMaxLength(20).HasDefaultValue("member");
+    entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("active");
+    entity.Property(e => e.JoinedAt).HasColumnName("joined_at");
+    entity.Property(e => e.LeftAt).HasColumnName("left_at");
+    
+    // XÓA các HasOne/WithMany
+    // CHẶN XÓA DÂY CHUYỀN TẠI ĐÂY (Phòng ngừa lỗi tiếp theo)
         entity.HasOne(pm => pm.Project)
-            .WithMany()
-            .HasForeignKey(pm => pm.ProjectId)
-            .OnDelete(DeleteBehavior.NoAction);
-            
+              .WithMany(p => p.ProjectMembers)
+              .HasForeignKey(pm => pm.ProjectId)
+              .OnDelete(DeleteBehavior.NoAction);
+
         entity.HasOne(pm => pm.User)
-            .WithMany()
-            .HasForeignKey(pm => pm.UserId)
-            .OnDelete(DeleteBehavior.NoAction);
-            
-        entity.HasOne(pm => pm.Position)
-            .WithMany()
-            .HasForeignKey(pm => pm.PositionId)
-            .OnDelete(DeleteBehavior.NoAction)
-            .IsRequired(false);
-    });
+              .WithMany(u => u.ProjectMembers)
+              .HasForeignKey(pm => pm.UserId)
+              .OnDelete(DeleteBehavior.NoAction);
+});
     
     OnModelCreatingPartial(modelBuilder);
 }

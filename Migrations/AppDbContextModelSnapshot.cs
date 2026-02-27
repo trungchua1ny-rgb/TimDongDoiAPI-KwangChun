@@ -62,41 +62,59 @@ namespace TimDongDoi.API.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime?>("AppliedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("applied_at")
+                        .HasDefaultValueSql("(getdate())");
 
                     b.Property<string>("CoverLetter")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("cover_letter");
 
                     b.Property<string>("CvFile")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("cv_file");
 
                     b.Property<int>("JobId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("job_id");
 
                     b.Property<string>("RejectReason")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("reject_reason");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("pending")
+                        .HasColumnName("status");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("(getdate())");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
 
                     b.HasKey("Id");
 
                     b.HasIndex("JobId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "JobId")
+                        .IsUnique();
 
-                    b.ToTable("Applications");
+                    b.ToTable("applications", (string)null);
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.ApplicationTest", b =>
@@ -213,33 +231,40 @@ namespace TimDongDoi.API.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("address");
 
                     b.Property<string>("City")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("city");
 
                     b.Property<int>("CompanyId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("company_id");
 
                     b.Property<string>("Country")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("country");
 
                     b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
 
                     b.Property<bool?>("IsHeadquarter")
-                        .HasColumnType("bit");
+                        .HasColumnType("bit")
+                        .HasColumnName("is_headquarter");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("CompanyLocations");
+                    b.ToTable("company_locations", (string)null);
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.CompanyVerification", b =>
@@ -348,92 +373,138 @@ namespace TimDongDoi.API.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Benefits")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("benefits");
 
                     b.Property<int>("CompanyId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("company_id");
 
                     b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("(getdate())");
 
                     b.Property<DateOnly?>("Deadline")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("deadline");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("description");
 
                     b.Property<string>("Level")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("level");
 
                     b.Property<string>("Location")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("location");
 
                     b.Property<string>("LocationType")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("location_type");
 
                     b.Property<int?>("Positions")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1)
+                        .HasColumnName("positions");
 
                     b.Property<string>("Requirements")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("requirements");
 
                     b.Property<string>("SalaryCurrency")
-                        .HasColumnType("nvarchar(max)");
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("VND")
+                        .HasColumnName("salary_currency");
 
                     b.Property<int?>("SalaryMax")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("salary_max");
 
                     b.Property<int?>("SalaryMin")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("salary_min");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("open")
+                        .HasColumnName("status");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("title");
 
                     b.Property<string>("Type")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("type");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("(getdate())");
 
                     b.Property<int?>("Views")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0)
+                        .HasColumnName("views");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("Jobs");
+                    b.ToTable("jobs", (string)null);
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.JobSkill", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool?>("IsRequired")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_required");
 
                     b.Property<int>("JobId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("job_id");
 
                     b.Property<string>("Level")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("level");
 
                     b.Property<int>("SkillId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("skill_id");
 
                     b.HasKey("Id");
 
@@ -441,7 +512,7 @@ namespace TimDongDoi.API.Migrations
 
                     b.HasIndex("SkillId");
 
-                    b.ToTable("JobSkills");
+                    b.ToTable("job_skills", (string)null);
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.JobTest", b =>
@@ -458,16 +529,26 @@ namespace TimDongDoi.API.Migrations
                     b.Property<int>("JobId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("JobId1")
+                        .HasColumnType("int");
+
                     b.Property<int>("TestId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TestId1")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("JobId");
 
+                    b.HasIndex("JobId1");
+
                     b.HasIndex("TestId");
 
-                    b.ToTable("JobTests");
+                    b.HasIndex("TestId1");
+
+                    b.ToTable("JobTests", (string)null);
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.Message", b =>
@@ -546,86 +627,131 @@ namespace TimDongDoi.API.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CompensationDetails")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("compensation_details");
 
                     b.Property<string>("CompensationType")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("compensation_type");
 
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("description");
 
                     b.Property<int?>("DurationMonths")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("duration_months");
 
                     b.Property<string>("LocationType")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("location_type");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("open")
+                        .HasColumnName("status");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("title");
 
                     b.Property<string>("Type")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("type");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
 
-                    b.Property<int?>("Views")
-                        .HasColumnType("int");
+                    b.Property<int>("Views")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0)
+                        .HasColumnName("views");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Status");
+
+                    b.HasIndex("Type");
+
                     b.HasIndex("UserId");
 
-                    b.ToTable("Projects");
+                    b.ToTable("projects", (string)null);
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.ProjectApplication", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("AppliedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTime>("AppliedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("applied_at");
 
                     b.Property<string>("CoverLetter")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("cover_letter");
 
                     b.Property<string>("PortfolioLink")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("portfolio_link");
 
                     b.Property<int>("PositionId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("position_id");
 
                     b.Property<int>("ProjectId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("project_id");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("pending")
+                        .HasColumnName("status");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
 
                     b.HasKey("Id");
 
@@ -635,37 +761,53 @@ namespace TimDongDoi.API.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ProjectApplications");
+                    b.ToTable("project_applications", (string)null);
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.ProjectMember", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateOnly?>("JoinedAt")
-                        .HasColumnType("date");
+                    b.Property<DateOnly>("JoinedAt")
+                        .HasColumnType("date")
+                        .HasColumnName("joined_at");
 
                     b.Property<DateOnly?>("LeftAt")
-                        .HasColumnType("date");
+                        .HasColumnType("date")
+                        .HasColumnName("left_at");
 
                     b.Property<int?>("PositionId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("position_id");
 
                     b.Property<int>("ProjectId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("project_id");
 
                     b.Property<string>("RoleType")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("member")
+                        .HasColumnName("role_type");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("active")
+                        .HasColumnName("status");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
 
                     b.HasKey("Id");
 
@@ -675,58 +817,81 @@ namespace TimDongDoi.API.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ProjectMembers");
+                    b.ToTable("project_members", (string)null);
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.ProjectPosition", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
 
                     b.Property<int>("ProjectId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("project_id");
 
-                    b.Property<int?>("Quantity")
-                        .HasColumnType("int");
+                    b.Property<int>("Quantity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1)
+                        .HasColumnName("quantity");
 
                     b.Property<string>("Requirements")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("requirements");
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("role");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("open")
+                        .HasColumnName("status");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectPositions");
+                    b.ToTable("project_positions", (string)null);
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.ProjectPositionSkill", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool?>("IsRequired")
-                        .HasColumnType("bit");
+                    b.Property<bool>("IsRequired")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_required");
 
                     b.Property<int>("PositionId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("position_id");
 
                     b.Property<int>("SkillId")
+                        .HasColumnType("int")
+                        .HasColumnName("skill_id");
+
+                    b.Property<int?>("SkillId1")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -735,7 +900,9 @@ namespace TimDongDoi.API.Migrations
 
                     b.HasIndex("SkillId");
 
-                    b.ToTable("ProjectPositionSkills");
+                    b.HasIndex("SkillId1");
+
+                    b.ToTable("project_position_skills", (string)null);
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.Report", b =>
@@ -845,26 +1012,33 @@ namespace TimDongDoi.API.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("(getdate())");
 
                     b.Property<int>("JobId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("job_id");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
 
                     b.HasKey("Id");
 
                     b.HasIndex("JobId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "JobId")
+                        .IsUnique();
 
-                    b.ToTable("SavedJobs");
+                    b.ToTable("saved_jobs", (string)null);
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.Skill", b =>
@@ -1197,6 +1371,9 @@ namespace TimDongDoi.API.Migrations
                         .HasColumnType("int")
                         .HasColumnName("skill_id");
 
+                    b.Property<int?>("SkillId1")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("updated_at");
@@ -1206,12 +1383,14 @@ namespace TimDongDoi.API.Migrations
                         .HasColumnName("user_id");
 
                     b.Property<decimal?>("YearsExperience")
-                        .HasColumnType("decimal(18,2)")
+                        .HasColumnType("decimal(18, 2)")
                         .HasColumnName("years_experience");
 
                     b.HasKey("Id");
 
                     b.HasIndex("SkillId");
+
+                    b.HasIndex("SkillId1");
 
                     b.HasIndex("UserId");
 
@@ -1234,13 +1413,13 @@ namespace TimDongDoi.API.Migrations
                     b.HasOne("TimDongDoi.API.Models.Job", "Job")
                         .WithMany("Applications")
                         .HasForeignKey("JobId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("TimDongDoi.API.Models.User", "User")
                         .WithMany("Applications")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Job");
@@ -1351,16 +1530,24 @@ namespace TimDongDoi.API.Migrations
             modelBuilder.Entity("TimDongDoi.API.Models.JobTest", b =>
                 {
                     b.HasOne("TimDongDoi.API.Models.Job", "Job")
-                        .WithMany("JobTests")
+                        .WithMany()
                         .HasForeignKey("JobId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("TimDongDoi.API.Models.Test", "Test")
+                    b.HasOne("TimDongDoi.API.Models.Job", null)
                         .WithMany("JobTests")
+                        .HasForeignKey("JobId1");
+
+                    b.HasOne("TimDongDoi.API.Models.Test", "Test")
+                        .WithMany()
                         .HasForeignKey("TestId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("TimDongDoi.API.Models.Test", null)
+                        .WithMany("JobTests")
+                        .HasForeignKey("TestId1");
 
                     b.Navigation("Job");
 
@@ -1399,13 +1586,11 @@ namespace TimDongDoi.API.Migrations
 
             modelBuilder.Entity("TimDongDoi.API.Models.Project", b =>
                 {
-                    b.HasOne("TimDongDoi.API.Models.User", "User")
+                    b.HasOne("TimDongDoi.API.Models.User", null)
                         .WithMany("Projects")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.ProjectApplication", b =>
@@ -1413,19 +1598,19 @@ namespace TimDongDoi.API.Migrations
                     b.HasOne("TimDongDoi.API.Models.ProjectPosition", "Position")
                         .WithMany("ProjectApplications")
                         .HasForeignKey("PositionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("TimDongDoi.API.Models.Project", "Project")
                         .WithMany("ProjectApplications")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("TimDongDoi.API.Models.User", "User")
                         .WithMany("ProjectApplications")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Position");
@@ -1444,13 +1629,13 @@ namespace TimDongDoi.API.Migrations
                     b.HasOne("TimDongDoi.API.Models.Project", "Project")
                         .WithMany("ProjectMembers")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("TimDongDoi.API.Models.User", "User")
                         .WithMany("ProjectMembers")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Position");
@@ -1480,10 +1665,14 @@ namespace TimDongDoi.API.Migrations
                         .IsRequired();
 
                     b.HasOne("TimDongDoi.API.Models.Skill", "Skill")
-                        .WithMany("ProjectPositionSkills")
+                        .WithMany()
                         .HasForeignKey("SkillId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("TimDongDoi.API.Models.Skill", null)
+                        .WithMany("ProjectPositionSkills")
+                        .HasForeignKey("SkillId1");
 
                     b.Navigation("Position");
 
@@ -1497,7 +1686,7 @@ namespace TimDongDoi.API.Migrations
                         .HasForeignKey("ReportedJobId");
 
                     b.HasOne("TimDongDoi.API.Models.Project", "ReportedProject")
-                        .WithMany("Reports")
+                        .WithMany()
                         .HasForeignKey("ReportedProjectId");
 
                     b.HasOne("TimDongDoi.API.Models.Review", "ReportedReview")
@@ -1518,7 +1707,7 @@ namespace TimDongDoi.API.Migrations
                         .HasForeignKey("ApplicationId");
 
                     b.HasOne("TimDongDoi.API.Models.ProjectMember", "ProjectMember")
-                        .WithMany("Reviews")
+                        .WithMany()
                         .HasForeignKey("ProjectMemberId");
 
                     b.Navigation("Application");
@@ -1531,13 +1720,13 @@ namespace TimDongDoi.API.Migrations
                     b.HasOne("TimDongDoi.API.Models.Job", "Job")
                         .WithMany("SavedJobs")
                         .HasForeignKey("JobId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("TimDongDoi.API.Models.User", "User")
                         .WithMany("SavedJobs")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Job");
@@ -1592,10 +1781,14 @@ namespace TimDongDoi.API.Migrations
             modelBuilder.Entity("TimDongDoi.API.Models.UserSkill", b =>
                 {
                     b.HasOne("TimDongDoi.API.Models.Skill", "Skill")
-                        .WithMany("UserSkills")
+                        .WithMany()
                         .HasForeignKey("SkillId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("TimDongDoi.API.Models.Skill", null)
+                        .WithMany("UserSkills")
+                        .HasForeignKey("SkillId1");
 
                     b.HasOne("TimDongDoi.API.Models.User", "User")
                         .WithMany("UserSkills")
@@ -1648,13 +1841,6 @@ namespace TimDongDoi.API.Migrations
                     b.Navigation("ProjectMembers");
 
                     b.Navigation("ProjectPositions");
-
-                    b.Navigation("Reports");
-                });
-
-            modelBuilder.Entity("TimDongDoi.API.Models.ProjectMember", b =>
-                {
-                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("TimDongDoi.API.Models.ProjectPosition", b =>

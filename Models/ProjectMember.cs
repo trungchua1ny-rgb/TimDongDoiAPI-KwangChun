@@ -36,7 +36,7 @@ namespace TimDongDoi.API.Models
         [Column("left_at")]
         public DateOnly? LeftAt { get; set; }
 
-        // Navigation properties
+        // FIX: InverseProperty khớp với collection trong Project, User, ProjectPosition
         [ForeignKey("ProjectId")]
         public virtual Project? Project { get; set; }
 

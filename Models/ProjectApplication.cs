@@ -40,7 +40,7 @@ namespace TimDongDoi.API.Models
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; }
 
-        // Navigation properties
+        // FIX: InverseProperty khớp với collection trong Project, ProjectPosition, User
         [ForeignKey("ProjectId")]
         public virtual Project? Project { get; set; }
 

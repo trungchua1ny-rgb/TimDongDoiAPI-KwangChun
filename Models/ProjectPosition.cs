@@ -34,11 +34,9 @@ namespace TimDongDoi.API.Models
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 
-        // Navigation property
+        // FIX: InverseProperty khớp với collection trong Project
         [ForeignKey("ProjectId")]
         public virtual Project? Project { get; set; }
-
-        // Navigation properties (added based on your other files)
         public virtual ICollection<ProjectPositionSkill> ProjectPositionSkills { get; set; } = new List<ProjectPositionSkill>();
         public virtual ICollection<ProjectApplication> ProjectApplications { get; set; } = new List<ProjectApplication>();
         public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();

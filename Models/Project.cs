@@ -56,11 +56,9 @@ namespace TimDongDoi.API.Models
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; }
 
-        // Navigation property
+        // FIX: Thêm InverseProperty để EF Core biết đây là FK user_id, không tạo UserId1
         [ForeignKey("UserId")]
         public virtual User? User { get; set; }
-
-        // Navigation properties (added based on your other files)
         public virtual ICollection<ProjectApplication> ProjectApplications { get; set; } = new List<ProjectApplication>();
         public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
         public virtual ICollection<ProjectPosition> ProjectPositions { get; set; } = new List<ProjectPosition>();

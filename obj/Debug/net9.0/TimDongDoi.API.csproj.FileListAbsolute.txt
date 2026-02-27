@@ -1,5 +1,6 @@
 D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\appsettings.Development.json
 D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\appsettings.json
+D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\TimDongDoi.API.staticwebassets.runtime.json
 D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\TimDongDoi.API.staticwebassets.endpoints.json
 D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\TimDongDoi.API.exe
 D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\TimDongDoi.API.deps.json
@@ -156,6 +157,7 @@ D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.AssemblyInfo.
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.csproj.CoreCompileInputs.cache
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.MvcApplicationPartsAssemblyInfo.cs
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.MvcApplicationPartsAssemblyInfo.cache
+D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.sourcelink.json
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\rjimswa.dswa.cache.json
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
@@ -170,4 +172,3 @@ D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\refint\TimDongDoi.API.dll
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.pdb
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\TimDongDoi.API.genruntimeconfig.cache
 D:\DTNCKH\ChunShyns\TimDongDoi.API\obj\Debug\net9.0\ref\TimDongDoi.API.dll
-D:\DTNCKH\ChunShyns\TimDongDoi.API\bin\Debug\net9.0\TimDongDoi.API.staticwebassets.runtime.json

@@ -23,9 +23,8 @@ namespace TimDongDoi.API.Controllers
             return int.Parse(userIdClaim ?? "0");
         }
 
-        #region PROJECT CRUD
+        // ========== PROJECT CRUD ==========
 
-        // POST /api/projects
         [HttpPost]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> CreateProject([FromBody] CreateProjectRequest request)
@@ -34,12 +33,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var project = await _projectService.CreateProject(userId, request);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Project created successfully",
-                    data = project
-                });
+                return Ok(new { success = true, message = "Project created successfully", data = project });
             }
             catch (InvalidOperationException ex)
             {
@@ -51,7 +45,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // GET /api/projects/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProjectById(int id)
         {
@@ -70,7 +63,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // GET /api/projects/my
         [HttpGet("my")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> GetMyProjects([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
@@ -87,28 +79,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // GET /api/projects/my/{id}
-        [HttpGet("my/{id}")]
-        [Authorize(Roles = "user")]
-        public async Task<IActionResult> GetMyProject(int id)
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
-                var project = await _projectService.GetMyProject(userId, id);
-                return Ok(new { success = true, data = project });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = ex.Message });
-            }
-        }
-
-        // PUT /api/projects/{id}
         [HttpPut("{id}")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> UpdateProject(int id, [FromBody] UpdateProjectRequest request)
@@ -117,12 +87,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var project = await _projectService.UpdateProject(userId, id, request);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Project updated successfully",
-                    data = project
-                });
+                return Ok(new { success = true, message = "Project updated successfully", data = project });
             }
             catch (KeyNotFoundException ex)
             {
@@ -138,7 +103,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // DELETE /api/projects/{id}
         [HttpDelete("{id}")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> DeleteProject(int id)
@@ -167,11 +131,8 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        #endregion
+        // ========== PROJECT STATUS ==========
 
-        #region PROJECT STATUS
-
-        // PUT /api/projects/{id}/close
         [HttpPut("{id}/close")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> CloseProject(int id)
@@ -180,20 +141,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var project = await _projectService.CloseProject(userId, id);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Project closed successfully",
-                    data = project
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
+                return Ok(new { success = true, message = "Project closed successfully", data = project });
             }
             catch (Exception ex)
             {
@@ -201,7 +149,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // PUT /api/projects/{id}/reopen
         [HttpPut("{id}/reopen")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> ReopenProject(int id)
@@ -210,20 +157,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var project = await _projectService.ReopenProject(userId, id);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Project reopened successfully",
-                    data = project
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
+                return Ok(new { success = true, message = "Project reopened successfully", data = project });
             }
             catch (InvalidOperationException ex)
             {
@@ -235,7 +169,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // PUT /api/projects/{id}/in-progress
         [HttpPut("{id}/in-progress")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> MarkAsInProgress(int id)
@@ -244,20 +177,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var project = await _projectService.MarkAsInProgress(userId, id);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Project marked as in progress",
-                    data = project
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
+                return Ok(new { success = true, message = "Project marked as in progress", data = project });
             }
             catch (Exception ex)
             {
@@ -265,7 +185,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // PUT /api/projects/{id}/completed
         [HttpPut("{id}/completed")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> MarkAsCompleted(int id)
@@ -274,20 +193,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var project = await _projectService.MarkAsCompleted(userId, id);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Project marked as completed",
-                    data = project
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
+                return Ok(new { success = true, message = "Project marked as completed", data = project });
             }
             catch (Exception ex)
             {
@@ -295,7 +201,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // GET /api/projects/{id}/stats
         [HttpGet("{id}/stats")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> GetProjectStats(int id)
@@ -306,25 +211,14 @@ namespace TimDongDoi.API.Controllers
                 var stats = await _projectService.GetProjectStats(userId, id);
                 return Ok(new { success = true, data = stats });
             }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
-            }
             catch (Exception ex)
             {
                 return StatusCode(500, new { success = false, message = ex.Message });
             }
         }
 
-        #endregion
+        // ========== POSITION MANAGEMENT ==========
 
-        #region POSITION MANAGEMENT
-
-        // POST /api/projects/{projectId}/positions
         [HttpPost("{projectId}/positions")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> AddPosition(int projectId, [FromBody] CreatePositionDto request)
@@ -333,20 +227,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var position = await _projectService.AddPosition(userId, projectId, request);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Position added successfully",
-                    data = position
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
+                return Ok(new { success = true, message = "Position added successfully", data = position });
             }
             catch (Exception ex)
             {
@@ -354,7 +235,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // GET /api/projects/{projectId}/positions
         [HttpGet("{projectId}/positions")]
         public async Task<IActionResult> GetProjectPositions(int projectId)
         {
@@ -369,7 +249,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // PUT /api/projects/positions/{positionId}
         [HttpPut("positions/{positionId}")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> UpdatePosition(int positionId, [FromBody] UpdatePositionRequest request)
@@ -378,20 +257,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var position = await _projectService.UpdatePosition(userId, positionId, request);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Position updated successfully",
-                    data = position
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
+                return Ok(new { success = true, message = "Position updated successfully", data = position });
             }
             catch (Exception ex)
             {
@@ -399,7 +265,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // DELETE /api/projects/positions/{positionId}
         [HttpDelete("positions/{positionId}")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> DeletePosition(int positionId)
@@ -409,14 +274,6 @@ namespace TimDongDoi.API.Controllers
                 var userId = GetCurrentUserId();
                 await _projectService.DeletePosition(userId, positionId);
                 return Ok(new { success = true, message = "Position deleted successfully" });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
             }
             catch (InvalidOperationException ex)
             {
@@ -428,11 +285,8 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        #endregion
+        // ========== POSITION SKILLS ==========
 
-        #region POSITION SKILLS
-
-        // GET /api/projects/positions/{positionId}/skills
         [HttpGet("positions/{positionId}/skills")]
         public async Task<IActionResult> GetPositionSkills(int positionId)
         {
@@ -447,7 +301,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // POST /api/projects/positions/{positionId}/skills
         [HttpPost("positions/{positionId}/skills")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> AddPositionSkill(int positionId, [FromBody] AddPositionSkillRequest request)
@@ -456,15 +309,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 await _projectService.AddPositionSkill(userId, positionId, request);
-                return Ok(new { success = true, message = "Skill added to position successfully" });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
+                return Ok(new { success = true, message = "Skill added successfully" });
             }
             catch (InvalidOperationException ex)
             {
@@ -476,7 +321,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // DELETE /api/projects/positions/{positionId}/skills/{skillId}
         [HttpDelete("positions/{positionId}/skills/{skillId}")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> DeletePositionSkill(int positionId, int skillId)
@@ -485,15 +329,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 await _projectService.DeletePositionSkill(userId, positionId, skillId);
-                return Ok(new { success = true, message = "Skill removed from position successfully" });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
+                return Ok(new { success = true, message = "Skill removed successfully" });
             }
             catch (Exception ex)
             {
@@ -501,11 +337,8 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        #endregion
+        // ========== USER APPLICATIONS ==========
 
-        #region USER APPLICATIONS
-
-        // POST /api/projects/{projectId}/apply
         [HttpPost("{projectId}/apply")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> ApplyToProject(int projectId, [FromBody] CreateProjectApplicationRequest request)
@@ -514,16 +347,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var application = await _projectService.ApplyToProject(userId, projectId, request);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Application submitted successfully",
-                    data = application
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
+                return Ok(new { success = true, message = "Application submitted successfully", data = application });
             }
             catch (InvalidOperationException ex)
             {
@@ -535,7 +359,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // GET /api/projects/applications/my
         [HttpGet("applications/my")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> GetMyApplications([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
@@ -552,7 +375,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // GET /api/projects/applications/my/{id}
         [HttpGet("applications/my/{id}")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> GetMyApplicationById(int id)
@@ -573,7 +395,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // DELETE /api/projects/applications/{id}
         [HttpDelete("applications/{id}")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> WithdrawApplication(int id)
@@ -584,10 +405,6 @@ namespace TimDongDoi.API.Controllers
                 await _projectService.WithdrawApplication(userId, id);
                 return Ok(new { success = true, message = "Application withdrawn successfully" });
             }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
             catch (InvalidOperationException ex)
             {
                 return BadRequest(new { success = false, message = ex.Message });
@@ -598,29 +415,17 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        #endregion
+        // ========== OWNER: MANAGE APPLICATIONS ==========
 
-        #region OWNER: MANAGE APPLICATIONS
-
-        // GET /api/projects/{projectId}/applications
         [HttpGet("{projectId}/applications")]
         [Authorize(Roles = "user")]
-        public async Task<IActionResult> GetProjectApplications(
-            int projectId,
-            [FromQuery] int? positionId,
-            [FromQuery] string? status,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20)
+        public async Task<IActionResult> GetProjectApplications(int projectId, [FromQuery] int? positionId, [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             try
             {
                 var userId = GetCurrentUserId();
                 var applications = await _projectService.GetProjectApplications(userId, projectId, positionId, status, page, pageSize);
                 return Ok(new { success = true, data = applications });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -632,7 +437,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // GET /api/projects/applications/{id}/detail
         [HttpGet("applications/{id}/detail")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> GetApplicationDetail(int id)
@@ -643,10 +447,6 @@ namespace TimDongDoi.API.Controllers
                 var application = await _projectService.GetApplicationDetail(userId, id);
                 return Ok(new { success = true, data = application });
             }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
             catch (UnauthorizedAccessException ex)
             {
                 return StatusCode(403, new { success = false, message = ex.Message });
@@ -657,7 +457,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // PUT /api/projects/applications/{id}/accept
         [HttpPut("applications/{id}/accept")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> AcceptApplication(int id)
@@ -666,20 +465,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var application = await _projectService.AcceptApplication(userId, id);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Application accepted successfully",
-                    data = application
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
+                return Ok(new { success = true, message = "Application accepted successfully", data = application });
             }
             catch (InvalidOperationException ex)
             {
@@ -691,7 +477,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // PUT /api/projects/applications/{id}/reject
         [HttpPut("applications/{id}/reject")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> RejectApplication(int id)
@@ -700,20 +485,7 @@ namespace TimDongDoi.API.Controllers
             {
                 var userId = GetCurrentUserId();
                 var application = await _projectService.RejectApplication(userId, id);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Application rejected successfully",
-                    data = application
-                });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
+                return Ok(new { success = true, message = "Application rejected successfully", data = application });
             }
             catch (InvalidOperationException ex)
             {
@@ -725,11 +497,8 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        #endregion
+        // ========== MEMBER MANAGEMENT ==========
 
-        #region MEMBER MANAGEMENT
-
-        // GET /api/projects/{projectId}/members
         [HttpGet("{projectId}/members")]
         public async Task<IActionResult> GetProjectMembers(int projectId, [FromQuery] string? status)
         {
@@ -744,7 +513,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // DELETE /api/projects/members/{memberId}
         [HttpDelete("members/{memberId}")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> RemoveMember(int memberId)
@@ -755,14 +523,6 @@ namespace TimDongDoi.API.Controllers
                 await _projectService.RemoveMember(userId, memberId);
                 return Ok(new { success = true, message = "Member removed successfully" });
             }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { success = false, message = ex.Message });
-            }
             catch (InvalidOperationException ex)
             {
                 return BadRequest(new { success = false, message = ex.Message });
@@ -773,7 +533,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // POST /api/projects/{projectId}/leave
         [HttpPost("{projectId}/leave")]
         [Authorize(Roles = "user")]
         public async Task<IActionResult> LeaveProject(int projectId)
@@ -784,10 +543,6 @@ namespace TimDongDoi.API.Controllers
                 await _projectService.LeaveProject(userId, projectId);
                 return Ok(new { success = true, message = "You have left the project successfully" });
             }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { success = false, message = ex.Message });
-            }
             catch (InvalidOperationException ex)
             {
                 return BadRequest(new { success = false, message = ex.Message });
@@ -798,11 +553,8 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        #endregion
+        // ========== SEARCH & DISCOVERY ==========
 
-        #region SEARCH & DISCOVERY
-
-        // GET /api/projects
         [HttpGet]
         public async Task<IActionResult> SearchProjects([FromQuery] ProjectSearchFilters filters)
         {
@@ -828,7 +580,6 @@ namespace TimDongDoi.API.Controllers
             }
         }
 
-        // GET /api/projects/featured
         [HttpGet("featured")]
         public async Task<IActionResult> GetFeaturedProjects([FromQuery] int count = 10)
         {
@@ -842,7 +593,5 @@ namespace TimDongDoi.API.Controllers
                 return StatusCode(500, new { success = false, message = ex.Message });
             }
         }
-
-        #endregion
     }
 }

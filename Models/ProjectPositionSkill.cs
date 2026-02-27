@@ -21,11 +21,8 @@ namespace TimDongDoi.API.Models
         [Column("is_required")]
         public bool IsRequired { get; set; } = true;
 
-        // Navigation properties
-        [ForeignKey("PositionId")]
+        // Navigation properties - Không đặt thẻ ForeignKey ở đây nữa
         public virtual ProjectPosition? Position { get; set; }
-
-        [ForeignKey("SkillId")]
         public virtual Skill? Skill { get; set; }
     }
 }
