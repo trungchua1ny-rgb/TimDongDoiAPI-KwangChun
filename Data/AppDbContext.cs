@@ -438,6 +438,35 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
               .HasForeignKey(pm => pm.UserId)
               .OnDelete(DeleteBehavior.NoAction);
 });
+
+    
+// ==================== REVIEW ====================
+    modelBuilder.Entity<Review>(entity =>
+    {
+        entity.ToTable("Reviews"); // Đổi thành "reviews" nếu bảng trong SQL của bạn viết thường
+        entity.HasKey(e => e.Id);
+
+        // KHÔNG CÓ BẤT KỲ DÒNG HasColumnName NÀO Ở ĐÂY NỮA, ĐỂ EF CORE TỰ LẤY TÊN GỐC (VD: FromUserId)
+
+        entity.HasOne(d => d.Application)
+              .WithMany(a => a.Reviews) 
+              .HasForeignKey(d => d.ApplicationId);
+
+        entity.HasOne(d => d.ProjectMember)
+              .WithMany()
+              .HasForeignKey(d => d.ProjectMemberId);
+
+        entity.HasOne(d => d.FromUser) 
+              .WithMany() 
+              .HasForeignKey(d => d.FromUserId)
+              .OnDelete(DeleteBehavior.NoAction); 
+
+        entity.HasOne(d => d.ToUser) 
+              .WithMany() 
+              .HasForeignKey(d => d.ToUserId)
+              .OnDelete(DeleteBehavior.NoAction);
+    });
+
     
     OnModelCreatingPartial(modelBuilder);
 }

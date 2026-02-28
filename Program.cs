@@ -27,6 +27,8 @@ builder.Services.AddScoped<ICompanyService, CompanyService>(); // <-- Module E c
 builder.Services.AddScoped<IJobService, JobService>();       // <-- Module F của bạn
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
+// Thêm vào phần services registration:
+builder.Services.AddScoped<IReviewService, ReviewService>();
 //builder.Services.AddScoped<IProjectService, ProjectService>();
 
 // Database
