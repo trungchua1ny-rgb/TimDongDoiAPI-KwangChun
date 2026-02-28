@@ -233,24 +233,62 @@ namespace TimDongDoi.API.Services.Implementations
             return await GetProjectById(projectId);
         }
 
-        public async Task DeleteProject(int userId, int projectId)
+       public async Task DeleteProject(int userId, int projectId)
+{
+    // 1. Tìm Project KÈM THEO tất cả dữ liệu con để chuẩn bị xóa
+    var project = await _context.Projects
+        .Include(p => p.ProjectMembers)
+        .Include(p => p.ProjectApplications)
+        .Include(p => p.ProjectPositions)
+            .ThenInclude(pp => pp.ProjectPositionSkills)
+        .FirstOrDefaultAsync(p => p.Id == projectId);
+
+    if (project == null)
+        throw new KeyNotFoundException("Project not found");
+
+    // 2. Giữ nguyên logic kiểm tra quyền của bạn
+    if (project.UserId != userId)
+        throw new UnauthorizedAccessException("You don't have permission");
+
+    // 3. Giữ nguyên logic kiểm tra thành viên active của bạn
+    var hasActiveMembers = project.ProjectMembers
+        .Any(m => m.Status == "active" && m.RoleType != "founder");
+
+    if (hasActiveMembers)
+        throw new InvalidOperationException("Cannot delete project with active members");
+
+    // ================= BẮT ĐẦU DỌN DẸP DỮ LIỆU CON TRƯỚC (ĐỂ FIX LỖI 500) =================
+
+    // Xóa tất cả ProjectMembers (bao gồm cả founder hoặc những người đã left)
+    if (project.ProjectMembers.Any())
+    {
+        _context.ProjectMembers.RemoveRange(project.ProjectMembers);
+    }
+
+    // Xóa tất cả ProjectApplications (đơn đang chờ duyệt, đã từ chối...)
+    if (project.ProjectApplications.Any())
+    {
+        _context.ProjectApplications.RemoveRange(project.ProjectApplications);
+    }
+
+    // Xóa tất cả Vị trí (Positions) và Kỹ năng yêu cầu của vị trí đó
+    foreach (var position in project.ProjectPositions)
+    {
+        if (position.ProjectPositionSkills.Any())
         {
-            var project = await _context.Projects.FindAsync(projectId);
-            if (project == null)
-                throw new KeyNotFoundException("Project not found");
-
-            if (project.UserId != userId)
-                throw new UnauthorizedAccessException("You don't have permission");
-
-            var activeMembersCount = await _context.ProjectMembers
-                .CountAsync(m => m.ProjectId == projectId && m.Status == "active" && m.RoleType != "founder");
-
-            if (activeMembersCount > 0)
-                throw new InvalidOperationException("Cannot delete project with active members");
-
-            _context.Projects.Remove(project);
-            await _context.SaveChangesAsync();
+            _context.ProjectPositionSkills.RemoveRange(position.ProjectPositionSkills);
         }
+    }
+    if (project.ProjectPositions.Any())
+    {
+        _context.ProjectPositions.RemoveRange(project.ProjectPositions);
+    }
+
+    // ================= CUỐI CÙNG MỚI XÓA DỰ ÁN =================
+    
+    _context.Projects.Remove(project);
+    await _context.SaveChangesAsync();
+}
 
         #endregion
 
