@@ -29,6 +29,8 @@ builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 // Thêm vào phần services registration:
 builder.Services.AddScoped<IReviewService, ReviewService>();
+// Thêm vào phần services registration:
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 //builder.Services.AddScoped<IProjectService, ProjectService>();
 
 // Database
