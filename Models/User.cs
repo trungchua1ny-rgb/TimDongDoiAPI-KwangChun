@@ -67,5 +67,7 @@ namespace TimDongDoi.API.Models
         public virtual ICollection<UserEducation> UserEducations { get; set; } = new List<UserEducation>();
         public virtual ICollection<UserExperience> UserExperiences { get; set; } = new List<UserExperience>();
         public virtual ICollection<UserSkill> UserSkills { get; set; } = new List<UserSkill>();
+        public DateTime? BannedUntil { get; set; }
+        public string? BanReason { get; set; }
     }
 }

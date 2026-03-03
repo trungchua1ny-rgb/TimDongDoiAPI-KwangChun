@@ -162,6 +162,10 @@ namespace TimDongDoi.API.Services.Implementations
             {
                 throw new UnauthorizedAccessException("Tài khoản đã bị khóa hoặc chưa được kích hoạt.");
             }
+            if (user.Status == "banned")
+            {
+                throw new UnauthorizedAccessException("Tài khoản của bạn đã bị cấm do vi phạm chính sách cộng đồng.");
+            }
 
             // Verify password
             var storedHash = Encoding.UTF8.GetString(user.PasswordHash);

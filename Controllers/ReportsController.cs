@@ -33,28 +33,18 @@ public class ReportsController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var result = await _reportService.CreateReport(userId, request);
-            return Ok(new { success = true, message = "Report submitted successfully", data = result });
+            return Ok(new { success = true, message = "Report submitted", data = result });
         }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { success = false, message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { success = false, message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, message = ex.Message });
-        }
+        catch (KeyNotFoundException ex) { return NotFound(new { success = false, message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { success = false, message = ex.Message }); }
+        catch (Exception ex) { return StatusCode(500, new { success = false, message = ex.Message }); }
     }
 
     // GET /api/reports/my
     [HttpGet("my")]
     [Authorize(Roles = "user,company")]
     public async Task<IActionResult> GetMyReports(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         try
         {
@@ -62,13 +52,10 @@ public class ReportsController : ControllerBase
             var result = await _reportService.GetMyReports(userId, page, pageSize);
             return Ok(new { success = true, data = result });
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, message = ex.Message });
-        }
+        catch (Exception ex) { return StatusCode(500, new { success = false, message = ex.Message }); }
     }
 
-    // GET /api/reports - Admin only
+    // GET /api/reports
     [HttpGet]
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> GetAllReports(
@@ -82,13 +69,10 @@ public class ReportsController : ControllerBase
             var result = await _reportService.GetAllReports(page, pageSize, status, type);
             return Ok(new { success = true, data = result });
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, message = ex.Message });
-        }
+        catch (Exception ex) { return StatusCode(500, new { success = false, message = ex.Message }); }
     }
 
-    // GET /api/reports/{id} - Admin only
+    // GET /api/reports/{id}
     [HttpGet("{id}")]
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> GetReportById(int id)
@@ -98,17 +82,12 @@ public class ReportsController : ControllerBase
             var result = await _reportService.GetReportById(id);
             return Ok(new { success = true, data = result });
         }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { success = false, message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, message = ex.Message });
-        }
+        catch (KeyNotFoundException ex) { return NotFound(new { success = false, message = ex.Message }); }
+        catch (Exception ex) { return StatusCode(500, new { success = false, message = ex.Message }); }
     }
 
-    // PUT /api/reports/{id}/handle - Admin only
+    // PUT /api/reports/{id}/handle
+    // Nếu report type = "user" và muốn ban → truyền thêm BanAction
     [HttpPut("{id}/handle")]
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> HandleReport(int id, [FromBody] HandleReportRequest request)
@@ -117,19 +96,40 @@ public class ReportsController : ControllerBase
         {
             var adminId = GetCurrentUserId();
             var result = await _reportService.HandleReport(adminId, id, request);
-            return Ok(new { success = true, message = "Report handled successfully", data = result });
+            return Ok(new { success = true, message = "Report handled", data = result });
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException ex) { return NotFound(new { success = false, message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { success = false, message = ex.Message }); }
+        catch (Exception ex) { return StatusCode(500, new { success = false, message = ex.Message }); }
+    }
+
+    // PUT /api/reports/users/{userId}/unban
+    [HttpPut("users/{userId}/unban")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> UnbanUser(int userId)
+    {
+        try
         {
-            return NotFound(new { success = false, message = ex.Message });
+            var adminId = GetCurrentUserId();
+            await _reportService.UnbanUser(adminId, userId);
+            return Ok(new { success = true, message = "User has been unbanned" });
         }
-        catch (InvalidOperationException ex)
+        catch (KeyNotFoundException ex) { return NotFound(new { success = false, message = ex.Message }); }
+        catch (InvalidOperationException ex) { return BadRequest(new { success = false, message = ex.Message }); }
+        catch (Exception ex) { return StatusCode(500, new { success = false, message = ex.Message }); }
+    }
+
+    // GET /api/reports/users/{userId}/status
+    [HttpGet("users/{userId}/status")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> GetUserStatus(int userId)
+    {
+        try
         {
-            return BadRequest(new { success = false, message = ex.Message });
+            var result = await _reportService.GetUserStatus(userId);
+            return Ok(new { success = true, data = result });
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { success = false, message = ex.Message });
-        }
+        catch (KeyNotFoundException ex) { return NotFound(new { success = false, message = ex.Message }); }
+        catch (Exception ex) { return StatusCode(500, new { success = false, message = ex.Message }); }
     }
 }

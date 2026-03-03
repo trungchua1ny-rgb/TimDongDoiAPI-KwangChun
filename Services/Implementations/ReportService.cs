@@ -17,46 +17,40 @@ public class ReportService : IReportService
 
     public async Task<ReportDto> CreateReport(int reporterId, CreateReportRequest request)
     {
-        // Validate type
         var validTypes = new[] { "user", "job", "review", "project" };
         if (!validTypes.Contains(request.Type))
-            throw new InvalidOperationException("Invalid report type. Must be: user, job, review, project");
+            throw new InvalidOperationException("Invalid type. Must be: user, job, review, project");
 
-        // Validate target tồn tại theo type
         switch (request.Type)
         {
             case "user":
                 if (request.ReportedUserId == null)
-                    throw new InvalidOperationException("ReportedUserId is required for type 'user'");
+                    throw new InvalidOperationException("ReportedUserId is required");
                 if (request.ReportedUserId == reporterId)
                     throw new InvalidOperationException("Cannot report yourself");
-                var userExists = await _context.Users.AnyAsync(u => u.Id == request.ReportedUserId);
-                if (!userExists) throw new KeyNotFoundException("Reported user not found");
+                if (!await _context.Users.AnyAsync(u => u.Id == request.ReportedUserId))
+                    throw new KeyNotFoundException("Reported user not found");
                 break;
-
             case "job":
                 if (request.ReportedJobId == null)
-                    throw new InvalidOperationException("ReportedJobId is required for type 'job'");
-                var jobExists = await _context.Jobs.AnyAsync(j => j.Id == request.ReportedJobId);
-                if (!jobExists) throw new KeyNotFoundException("Reported job not found");
+                    throw new InvalidOperationException("ReportedJobId is required");
+                if (!await _context.Jobs.AnyAsync(j => j.Id == request.ReportedJobId))
+                    throw new KeyNotFoundException("Reported job not found");
                 break;
-
             case "review":
                 if (request.ReportedReviewId == null)
-                    throw new InvalidOperationException("ReportedReviewId is required for type 'review'");
-                var reviewExists = await _context.Reviews.AnyAsync(r => r.Id == request.ReportedReviewId);
-                if (!reviewExists) throw new KeyNotFoundException("Reported review not found");
+                    throw new InvalidOperationException("ReportedReviewId is required");
+                if (!await _context.Reviews.AnyAsync(r => r.Id == request.ReportedReviewId))
+                    throw new KeyNotFoundException("Reported review not found");
                 break;
-
             case "project":
                 if (request.ReportedProjectId == null)
-                    throw new InvalidOperationException("ReportedProjectId is required for type 'project'");
-                var projectExists = await _context.Projects.AnyAsync(p => p.Id == request.ReportedProjectId);
-                if (!projectExists) throw new KeyNotFoundException("Reported project not found");
+                    throw new InvalidOperationException("ReportedProjectId is required");
+                if (!await _context.Projects.AnyAsync(p => p.Id == request.ReportedProjectId))
+                    throw new KeyNotFoundException("Reported project not found");
                 break;
         }
 
-        // Kiểm tra đã report chưa (tránh spam)
         var alreadyReported = await _context.Reports.AnyAsync(r =>
             r.ReporterId == reporterId &&
             r.Type == request.Type &&
@@ -86,15 +80,12 @@ public class ReportService : IReportService
         await _context.SaveChangesAsync();
 
         var reporter = await _context.Users.FindAsync(reporterId);
-
         return MapToDto(report, reporter?.FullName ?? string.Empty);
     }
 
     public async Task<ReportListResponse> GetMyReports(int userId, int page, int pageSize)
     {
-        var query = _context.Reports
-            .Where(r => r.ReporterId == userId);
-
+        var query = _context.Reports.Where(r => r.ReporterId == userId);
         var totalCount = await query.CountAsync();
 
         var reports = await query
@@ -104,11 +95,10 @@ public class ReportService : IReportService
             .ToListAsync();
 
         var reporter = await _context.Users.FindAsync(userId);
-        var reporterName = reporter?.FullName ?? string.Empty;
 
         return new ReportListResponse
         {
-            Reports = reports.Select(r => MapToDto(r, reporterName)).ToList(),
+            Reports = reports.Select(r => MapToDto(r, reporter?.FullName ?? string.Empty)).ToList(),
             TotalCount = totalCount,
             Page = page,
             PageSize = pageSize
@@ -122,7 +112,6 @@ public class ReportService : IReportService
 
         if (!string.IsNullOrEmpty(status))
             query = query.Where(r => r.Status == status);
-
         if (!string.IsNullOrEmpty(type))
             query = query.Where(r => r.Type == type);
 
@@ -134,7 +123,6 @@ public class ReportService : IReportService
             .Take(pageSize)
             .ToListAsync();
 
-        // Lấy tên reporters
         var reporterIds = reports.Select(r => r.ReporterId).Distinct().ToList();
         var reporters = await _context.Users
             .Where(u => reporterIds.Contains(u.Id))
@@ -171,15 +159,123 @@ public class ReportService : IReportService
         if (report.Status != "pending")
             throw new InvalidOperationException("Report has already been handled");
 
+        // Xử lý ban nếu có BanAction
+        if (request.BanAction != null)
+        {
+            // Chỉ cho phép ban khi resolve report loại user
+            if (report.Type != "user")
+                throw new InvalidOperationException("Ban action only applies to reports of type 'user'");
+
+            if (report.ReportedUserId == null)
+                throw new InvalidOperationException("No reported user found in this report");
+
+            var validBanTypes = new[] { "temporary", "permanent" };
+            if (!validBanTypes.Contains(request.BanAction.Type))
+                throw new InvalidOperationException("Ban type must be: temporary or permanent");
+
+            if (request.BanAction.Type == "temporary" && (request.BanAction.DurationDays == null || request.BanAction.DurationDays <= 0))
+                throw new InvalidOperationException("DurationDays is required and must be > 0 for temporary ban");
+
+            var userToBan = await _context.Users.FindAsync(report.ReportedUserId)
+                ?? throw new KeyNotFoundException("Reported user not found");
+
+            if (userToBan.Status == "banned")
+                throw new InvalidOperationException("User is already banned");
+
+            // Thực hiện ban
+            userToBan.Status = "banned";
+            userToBan.BanReason = request.BanAction.Reason;
+            userToBan.BannedUntil = request.BanAction.Type == "permanent"
+                ? null                                                                    // null = vĩnh viễn
+                : DateTime.UtcNow.AddDays(request.BanAction.DurationDays!.Value);
+
+            // Ghi admin log
+            _context.AdminLogs.Add(new AdminLog
+            {
+                AdminId = adminId,
+                Action = request.BanAction.Type == "permanent" ? "ban_permanent" : "ban_temporary",
+                TargetType = "user",
+                TargetId = report.ReportedUserId.Value,
+                Reason = request.BanAction.Reason,
+                Metadata = request.BanAction.Type == "temporary"
+                    ? $"Duration: {request.BanAction.DurationDays} days, Until: {userToBan.BannedUntil}"
+                    : "Permanent ban",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        // Cập nhật report
         report.Status = request.Status;
         report.HandledBy = adminId;
         report.AdminNote = request.AdminNote;
         report.ResolvedAt = DateTime.UtcNow;
 
+        // Ghi admin log cho hành động handle report
+        _context.AdminLogs.Add(new AdminLog
+        {
+            AdminId = adminId,
+            Action = $"handle_report_{request.Status}",
+            TargetType = "report",
+            TargetId = reportId,
+            Reason = request.AdminNote,
+            CreatedAt = DateTime.UtcNow
+        });
+
         await _context.SaveChangesAsync();
 
         var reporter = await _context.Users.FindAsync(report.ReporterId);
         return MapToDto(report, reporter?.FullName ?? string.Empty);
+    }
+
+    public async Task UnbanUser(int adminId, int userId)
+    {
+        var user = await _context.Users.FindAsync(userId)
+            ?? throw new KeyNotFoundException("User not found");
+
+        if (user.Status != "banned")
+            throw new InvalidOperationException("User is not banned");
+
+        user.Status = "active";
+        user.BanReason = null;
+        user.BannedUntil = null;
+
+        _context.AdminLogs.Add(new AdminLog
+        {
+            AdminId = adminId,
+            Action = "unban_user",
+            TargetType = "user",
+            TargetId = userId,
+            Reason = "User unbanned by admin",
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<UserStatusDto> GetUserStatus(int userId)
+    {
+        var user = await _context.Users.FindAsync(userId)
+            ?? throw new KeyNotFoundException("User not found");
+
+        // Tự động unban nếu hết hạn
+        if (user.Status == "banned" && user.BannedUntil.HasValue && user.BannedUntil < DateTime.UtcNow)
+        {
+            user.Status = "active";
+            user.BanReason = null;
+            user.BannedUntil = null;
+            await _context.SaveChangesAsync();
+        }
+
+        return new UserStatusDto
+        {
+            UserId = user.Id,
+            FullName = user.FullName ?? string.Empty,
+            Email = user.Email,
+            Status = user.Status ?? "active",
+            BanReason = user.BanReason,
+            BannedUntil = user.BannedUntil,
+            IsPermanentBan = user.Status == "banned" && !user.BannedUntil.HasValue
+        };
     }
 
     private static ReportDto MapToDto(Report report, string reporterName) => new()
