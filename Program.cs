@@ -36,6 +36,7 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ITestService, TestService>();
+builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 //builder.Services.AddScoped<IProjectService, ProjectService>();
 
 // Database
