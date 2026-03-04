@@ -24,7 +24,7 @@ namespace TimDongDoi.API.Services.Implementations
         /// <summary>
         /// User apply job
         /// </summary>
-        public async Task<ApplicationDto> ApplyJob(int userId, int jobId, ApplyJobRequest request, IFormFile? cvFile)
+       public async Task<ApplicationDto> ApplyJob(int userId, int jobId, ApplyJobRequest request, IFormFile? cvFile)
         {
             // Kiểm tra user tồn tại
             var user = await _context.Users.FindAsync(userId);
@@ -92,7 +92,29 @@ namespace TimDongDoi.API.Services.Implementations
             };
 
             _context.Applications.Add(application);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(); // Lưu đơn để Database sinh ra application.Id
+
+            // 👇 BẮT ĐẦU ĐOẠN CODE BỔ SUNG: TỰ ĐỘNG PHÁT BÀI TEST 👇
+            
+            // 1. Kiểm tra xem Job này có gắn bài Test nào không
+            var jobTests = await _context.JobTests
+                .Where(jt => jt.JobId == jobId)
+                .ToListAsync();
+
+            // 2. Nếu có bài test, tạo luôn lượt thi cho ứng viên này
+            if (jobTests.Any())
+            {
+                var applicationTests = jobTests.Select(jt => new TimDongDoi.API.Models.ApplicationTest
+                {
+                    ApplicationId = application.Id, // ID của đơn ứng tuyển vừa được sinh ra ở trên
+                    TestId        = jt.TestId,
+                    Status        = "pending"       // Trạng thái chờ ứng viên làm bài
+                }).ToList();
+
+                _context.ApplicationTests.AddRange(applicationTests);
+                await _context.SaveChangesAsync();  // Lưu các lượt thi này vào Database
+            }
+            // 👆 KẾT THÚC ĐOẠN CODE BỔ SUNG 👆
 
             // Reload để lấy relationships
             return await GetApplicationById(userId, application.Id);
