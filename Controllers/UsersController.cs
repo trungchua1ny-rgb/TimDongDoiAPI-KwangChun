@@ -105,5 +105,24 @@ namespace TimDongDoi.API.Controllers
                     new { Message = "Lỗi server khi cập nhật hồ sơ.", Detail = ex.Message });
             }
         }
+        // GET /api/Users/{id} - Xem profile công khai của user bất kỳ
+[HttpGet("{id}")]
+[AllowAnonymous]
+public async Task<IActionResult> GetPublicProfile(int id)
+{
+    try
+    {
+        var profile = await _userService.GetUserProfile(id);
+        return Ok(new { message = "Lấy hồ sơ thành công.", data = profile });
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return NotFound(new { Message = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { Message = ex.Message });
+    }
+}
     }
 }
