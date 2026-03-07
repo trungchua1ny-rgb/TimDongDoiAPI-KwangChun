@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TimDongDoi.API.Data;
 using TimDongDoi.API.DTOs.Project;
+using TimDongDoi.API.DTOs.Notification; // ✅ Thêm namespace Notification
 using TimDongDoi.API.Models;
 using TimDongDoi.API.Services.Interfaces;
 
@@ -9,90 +10,93 @@ namespace TimDongDoi.API.Services.Implementations
     public class ProjectService : IProjectService
     {
         private readonly AppDbContext _context;
+        private readonly INotificationService _notificationService; // ✅ Thêm Notification Service
 
-        public ProjectService(AppDbContext context)
+        // ✅ Tiêm INotificationService vào Constructor
+        public ProjectService(AppDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         #region PROJECT CRUD
 
-   public async Task<ProjectDto> CreateProject(int userId, CreateProjectRequest request)
-{
-    // 1. Tạo Project chính
-    var project = new Project
-    {
-        UserId = userId,
-        Title = request.Title,
-        Description = request.Description,
-        Type = request.Type,
-        DurationMonths = request.DurationMonths,
-        LocationType = request.LocationType,
-        CompensationType = request.CompensationType,
-        CompensationDetails = request.CompensationDetails,
-        Status = "open",
-        CreatedAt = DateTime.Now,
-        UpdatedAt = DateTime.Now
-    };
-
-    _context.Projects.Add(project);
-    
-    // 2. Thêm founder vào Member
-    var founder = new ProjectMember
-    {
-        Project = project, // Dùng Navigation Property thay vì Id
-        UserId = userId,
-        RoleType = "founder",
-        Status = "active",
-        JoinedAt = DateOnly.FromDateTime(DateTime.Now)
-    };
-    _context.ProjectMembers.Add(founder);
-
-    // 3. Xử lý Positions và Skills
-    if (request.Positions != null)
-    {
-        foreach (var posDto in request.Positions)
+        public async Task<ProjectDto> CreateProject(int userId, CreateProjectRequest request)
         {
-            var position = new ProjectPosition
+            // 1. Tạo Project chính
+            var project = new Project
             {
-                Project = project,
-                Role = posDto.Role,
-                Quantity = posDto.Quantity,
-                Requirements = posDto.Requirements,
-                CreatedAt = DateTime.Now
+                UserId = userId,
+                Title = request.Title,
+                Description = request.Description,
+                Type = request.Type,
+                DurationMonths = request.DurationMonths,
+                LocationType = request.LocationType,
+                CompensationType = request.CompensationType,
+                CompensationDetails = request.CompensationDetails,
+                Status = "open",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
-            _context.ProjectPositions.Add(position);
 
-            if (posDto.RequiredSkillIds != null)
+            _context.Projects.Add(project);
+            
+            // 2. Thêm founder vào Member
+            var founder = new ProjectMember
             {
-                foreach (var sId in posDto.RequiredSkillIds)
+                Project = project, // Dùng Navigation Property thay vì Id
+                UserId = userId,
+                RoleType = "founder",
+                Status = "active",
+                JoinedAt = DateOnly.FromDateTime(DateTime.Now)
+            };
+            _context.ProjectMembers.Add(founder);
+
+            // 3. Xử lý Positions và Skills
+            if (request.Positions != null)
+            {
+                foreach (var posDto in request.Positions)
                 {
-                    _context.ProjectPositionSkills.Add(new ProjectPositionSkill 
-                    { 
-                        Position = position, 
-                        SkillId = sId, 
-                        IsRequired = true 
-                    });
+                    var position = new ProjectPosition
+                    {
+                        Project = project,
+                        Role = posDto.Role,
+                        Quantity = posDto.Quantity,
+                        Requirements = posDto.Requirements,
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.ProjectPositions.Add(position);
+
+                    if (posDto.RequiredSkillIds != null)
+                    {
+                        foreach (var sId in posDto.RequiredSkillIds)
+                        {
+                            _context.ProjectPositionSkills.Add(new ProjectPositionSkill 
+                            { 
+                                Position = position, 
+                                SkillId = sId, 
+                                IsRequired = true 
+                            });
+                        }
+                    }
                 }
             }
+
+            // 4. CHỈ GỌI MỘT LẦN DUY NHẤT ĐỂ ĐẢM BẢO TÍNH TOÀN VẸN
+            await _context.SaveChangesAsync();
+
+            return await GetProjectById(project.Id);
         }
-    }
-
-    // 4. CHỈ GỌI MỘT LẦN DUY NHẤT ĐỂ ĐẢM BẢO TÍNH TOÀN VẸN
-    await _context.SaveChangesAsync();
-
-    return await GetProjectById(project.Id);
-}
 
         public async Task<ProjectDto> GetProjectById(int projectId)
         {
             var project = await _context.Projects
-        .AsNoTracking()
-        .Include(p => p.User) // <--- SỬA DÒNG NÀY TẠI ĐÂY
-        .Include(p => p.ProjectPositions)
-            .ThenInclude(pos => pos.ProjectPositionSkills)
-                .ThenInclude(s => s.Skill)
-        .FirstOrDefaultAsync(p => p.Id == projectId);
+                .AsNoTracking()
+                .Include(p => p.User) // <--- SỬA DÒNG NÀY TẠI ĐÂY
+                .Include(p => p.ProjectPositions)
+                    .ThenInclude(pos => pos.ProjectPositionSkills)
+                        .ThenInclude(s => s.Skill)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
 
             if (project == null)
                 throw new KeyNotFoundException("Project not found");
@@ -233,67 +237,67 @@ namespace TimDongDoi.API.Services.Implementations
             return await GetProjectById(projectId);
         }
 
-       public async Task DeleteProject(int userId, int projectId)
-{
-    // 1. Tìm Project KÈM THEO tất cả dữ liệu con để chuẩn bị xóa
-    var project = await _context.Projects
-        .Include(p => p.ProjectMembers)
-        .Include(p => p.ProjectApplications)
-        .Include(p => p.ProjectPositions)
-            .ThenInclude(pp => pp.ProjectPositionSkills)
-        .FirstOrDefaultAsync(p => p.Id == projectId);
-
-    if (project == null)
-        throw new KeyNotFoundException("Project not found");
-
-    // 2. Giữ nguyên logic kiểm tra quyền của bạn
-    if (project.UserId != userId)
-        throw new UnauthorizedAccessException("You don't have permission");
-
-    // 3. Giữ nguyên logic kiểm tra thành viên active của bạn
-    var hasActiveMembers = project.ProjectMembers
-        .Any(m => m.Status == "active" && m.RoleType != "founder");
-
-    if (hasActiveMembers)
-        throw new InvalidOperationException("Cannot delete project with active members");
-
-    // ================= BẮT ĐẦU DỌN DẸP DỮ LIỆU CON TRƯỚC (ĐỂ FIX LỖI 500) =================
-
-    // Xóa tất cả ProjectMembers (bao gồm cả founder hoặc những người đã left)
-    if (project.ProjectMembers.Any())
-    {
-        _context.ProjectMembers.RemoveRange(project.ProjectMembers);
-    }
-
-    // Xóa tất cả ProjectApplications (đơn đang chờ duyệt, đã từ chối...)
-    if (project.ProjectApplications.Any())
-    {
-        _context.ProjectApplications.RemoveRange(project.ProjectApplications);
-    }
-
-    // Xóa tất cả Vị trí (Positions) và Kỹ năng yêu cầu của vị trí đó
-    foreach (var position in project.ProjectPositions)
-    {
-        if (position.ProjectPositionSkills.Any())
+        public async Task DeleteProject(int userId, int projectId)
         {
-            _context.ProjectPositionSkills.RemoveRange(position.ProjectPositionSkills);
-        }
-    }
-    if (project.ProjectPositions.Any())
-    {
-        _context.ProjectPositions.RemoveRange(project.ProjectPositions);
-    }
+            // 1. Tìm Project KÈM THEO tất cả dữ liệu con để chuẩn bị xóa
+            var project = await _context.Projects
+                .Include(p => p.ProjectMembers)
+                .Include(p => p.ProjectApplications)
+                .Include(p => p.ProjectPositions)
+                    .ThenInclude(pp => pp.ProjectPositionSkills)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
 
-    // ================= CUỐI CÙNG MỚI XÓA DỰ ÁN =================
-    
-    _context.Projects.Remove(project);
-    await _context.SaveChangesAsync();
-}
+            if (project == null)
+                throw new KeyNotFoundException("Project not found");
+
+            // 2. Giữ nguyên logic kiểm tra quyền của bạn
+            if (project.UserId != userId)
+                throw new UnauthorizedAccessException("You don't have permission");
+
+            // 3. Giữ nguyên logic kiểm tra thành viên active của bạn
+            var hasActiveMembers = project.ProjectMembers
+                .Any(m => m.Status == "active" && m.RoleType != "founder");
+
+            if (hasActiveMembers)
+                throw new InvalidOperationException("Cannot delete project with active members");
+
+            // ================= BẮT ĐẦU DỌN DẸP DỮ LIỆU CON TRƯỚC (ĐỂ FIX LỖI 500) =================
+
+            // Xóa tất cả ProjectMembers (bao gồm cả founder hoặc những người đã left)
+            if (project.ProjectMembers.Any())
+            {
+                _context.ProjectMembers.RemoveRange(project.ProjectMembers);
+            }
+
+            // Xóa tất cả ProjectApplications (đơn đang chờ duyệt, đã từ chối...)
+            if (project.ProjectApplications.Any())
+            {
+                _context.ProjectApplications.RemoveRange(project.ProjectApplications);
+            }
+
+            // Xóa tất cả Vị trí (Positions) và Kỹ năng yêu cầu của vị trí đó
+            foreach (var position in project.ProjectPositions)
+            {
+                if (position.ProjectPositionSkills.Any())
+                {
+                    _context.ProjectPositionSkills.RemoveRange(position.ProjectPositionSkills);
+                }
+            }
+            if (project.ProjectPositions.Any())
+            {
+                _context.ProjectPositions.RemoveRange(project.ProjectPositions);
+            }
+
+            // ================= CUỐI CÙNG MỚI XÓA DỰ ÁN =================
+            
+            _context.Projects.Remove(project);
+            await _context.SaveChangesAsync();
+        }
 
         #endregion
 
         #region PROJECT STATUS
-
+        // ... (Giữ nguyên các hàm CloseProject, ReopenProject, MarkAsInProgress, MarkAsCompleted, GetProjectStats) ...
         public async Task<ProjectDto> CloseProject(int userId, int projectId)
         {
             var project = await VerifyProjectOwnership(userId, projectId);
@@ -338,11 +342,10 @@ namespace TimDongDoi.API.Services.Implementations
             await VerifyProjectOwnership(userId, projectId);
             return await GetStatsForProject(projectId);
         }
-
         #endregion
 
         #region POSITION MANAGEMENT
-
+        // ... (Giữ nguyên các hàm AddPosition, GetProjectPositions, UpdatePosition, DeletePosition) ...
         public async Task<PositionDto> AddPosition(int userId, int projectId, CreatePositionDto request)
         {
             var project = await VerifyProjectOwnership(userId, projectId);
@@ -462,11 +465,10 @@ namespace TimDongDoi.API.Services.Implementations
             _context.ProjectPositions.Remove(position);
             await _context.SaveChangesAsync();
         }
-
         #endregion
 
         #region POSITION SKILLS
-
+        // ... (Giữ nguyên các hàm GetPositionSkills, AddPositionSkill, DeletePositionSkill) ...
         public async Task<List<PositionSkillDto>> GetPositionSkills(int positionId)
         {
             var skills = await _context.ProjectPositionSkills
@@ -537,7 +539,6 @@ namespace TimDongDoi.API.Services.Implementations
             _context.ProjectPositionSkills.Remove(positionSkill);
             await _context.SaveChangesAsync();
         }
-
         #endregion
 
         #region USER APPLICATIONS
@@ -582,6 +583,29 @@ namespace TimDongDoi.API.Services.Implementations
             _context.ProjectApplications.Add(application);
             await _context.SaveChangesAsync();
 
+            // ====== ✅ THÔNG BÁO ======
+            var applicant = await _context.Users.FindAsync(userId);
+
+            // 1. Thông báo cho người ứng tuyển
+            await _notificationService.CreateNotification(new CreateNotificationRequest
+            {
+                UserId = userId,
+                Type = "project_application",
+                Title = "Ứng tuyển dự án thành công! 🎉",
+                Content = $"Bạn đã nộp đơn tham gia dự án \"{project.Title}\" cho vị trí \"{position.Role}\". Hãy chờ leader duyệt nhé!",
+                Data = $"{{\"projectId\": {projectId}, \"applicationId\": {application.Id}}}"
+            });
+
+            // 2. Thông báo cho Leader của dự án
+            await _notificationService.CreateNotification(new CreateNotificationRequest
+            {
+                UserId = project.UserId,
+                Type = "project_application",
+                Title = "Có đồng đội mới xin gia nhập! 📋",
+                Content = $"{applicant?.FullName ?? "Ai đó"} vừa ứng tuyển vị trí \"{position.Role}\" trong dự án \"{project.Title}\".",
+                Data = $"{{\"projectId\": {projectId}, \"applicationId\": {application.Id}}}"
+            });
+
             return await GetApplicationDtoById(application.Id);
         }
 
@@ -625,6 +649,8 @@ namespace TimDongDoi.API.Services.Implementations
         public async Task WithdrawApplication(int userId, int applicationId)
         {
             var application = await _context.ProjectApplications
+                .Include(a => a.Project)   // ✅ Bổ sung Include để lấy Title
+                .Include(a => a.Position)  // ✅ Bổ sung Include để lấy Role
                 .FirstOrDefaultAsync(a => a.Id == applicationId && a.UserId == userId);
 
             if (application == null)
@@ -633,8 +659,22 @@ namespace TimDongDoi.API.Services.Implementations
             if (application.Status != "pending")
                 throw new InvalidOperationException("Can only withdraw pending applications");
 
+            var projectTitle = application.Project?.Title ?? "dự án";
+            var positionRole = application.Position?.Role ?? "vị trí";
+            var projectId = application.ProjectId;
+
             _context.ProjectApplications.Remove(application);
             await _context.SaveChangesAsync();
+
+            // ====== ✅ THÔNG BÁO ======
+            await _notificationService.CreateNotification(new CreateNotificationRequest
+            {
+                UserId = userId,
+                Type = "project_application",
+                Title = "Đã rút đơn ứng tuyển",
+                Content = $"Bạn đã rút đơn ứng tuyển vị trí \"{positionRole}\" trong dự án \"{projectTitle}\" thành công.",
+                Data = $"{{\"projectId\": {projectId}}}"
+            });
         }
 
         #endregion
@@ -734,6 +774,16 @@ namespace TimDongDoi.API.Services.Implementations
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                // ====== ✅ THÔNG BÁO ======
+                await _notificationService.CreateNotification(new CreateNotificationRequest
+                {
+                    UserId = application.UserId,
+                    Type = "project_application_status",
+                    Title = "Được nhận vào dự án! 🎊",
+                    Content = $"Tuyệt vời! Bạn đã được chấp nhận làm \"{application.Position!.Role}\" trong dự án \"{application.Project!.Title}\". Hãy vào chào hỏi đồng đội nhé!",
+                    Data = $"{{\"projectId\": {application.ProjectId}, \"applicationId\": {applicationId}, \"status\": \"accepted\"}}"
+                });
+
                 return await GetApplicationDtoById(applicationId);
             }
             catch
@@ -747,6 +797,7 @@ namespace TimDongDoi.API.Services.Implementations
         {
             var application = await _context.ProjectApplications
                 .Include(a => a.Project)
+                .Include(a => a.Position) // ✅ Bổ sung Include để lấy Role
                 .FirstOrDefaultAsync(a => a.Id == applicationId);
 
             if (application == null)
@@ -762,6 +813,16 @@ namespace TimDongDoi.API.Services.Implementations
             application.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
+
+            // ====== ✅ THÔNG BÁO ======
+            await _notificationService.CreateNotification(new CreateNotificationRequest
+            {
+                UserId = application.UserId,
+                Type = "project_application_status",
+                Title = "Kết quả ứng tuyển dự án",
+                Content = $"Rất tiếc, hồ sơ của bạn cho vị trí \"{application.Position!.Role}\" trong dự án \"{application.Project!.Title}\" chưa phù hợp lần này.",
+                Data = $"{{\"projectId\": {application.ProjectId}, \"applicationId\": {applicationId}, \"status\": \"rejected\"}}"
+            });
 
             return await GetApplicationDtoById(applicationId);
         }
@@ -817,6 +878,7 @@ namespace TimDongDoi.API.Services.Implementations
         {
             var member = await _context.ProjectMembers
                 .Include(m => m.Project)
+                .Include(m => m.Position) // ✅ Bổ sung Include để lấy Role
                 .FirstOrDefaultAsync(m => m.Id == memberId);
 
             if (member == null)
@@ -832,11 +894,24 @@ namespace TimDongDoi.API.Services.Implementations
             member.LeftAt = DateOnly.FromDateTime(DateTime.Now);
 
             await _context.SaveChangesAsync();
+
+            // ====== ✅ THÔNG BÁO ======
+            await _notificationService.CreateNotification(new CreateNotificationRequest
+            {
+                UserId = member.UserId,
+                Type = "project_member_removed",
+                Title = "Đã rời dự án 👋",
+                Content = $"Bạn đã ngừng tham gia vị trí \"{member.Position?.Role ?? "thành viên"}\" trong dự án \"{member.Project!.Title}\".",
+                Data = $"{{\"projectId\": {member.ProjectId}}}"
+            });
         }
 
         public async Task LeaveProject(int userId, int projectId)
         {
             var member = await _context.ProjectMembers
+                .Include(m => m.Project)  // ✅ Bổ sung Include để lấy Project
+                .Include(m => m.User)     // ✅ Bổ sung Include để lấy User Name
+                .Include(m => m.Position) // ✅ Bổ sung Include để lấy Role
                 .FirstOrDefaultAsync(m => m.ProjectId == projectId && m.UserId == userId && m.Status == "active");
 
             if (member == null)
@@ -849,12 +924,22 @@ namespace TimDongDoi.API.Services.Implementations
             member.LeftAt = DateOnly.FromDateTime(DateTime.Now);
 
             await _context.SaveChangesAsync();
+
+            // ====== ✅ THÔNG BÁO ======
+            await _notificationService.CreateNotification(new CreateNotificationRequest
+            {
+                UserId = member.Project!.UserId, // Báo cho Leader biết
+                Type = "project_member_left",
+                Title = "Một đồng đội đã rời đi 🏃",
+                Content = $"Thành viên \"{member.User?.FullName ?? "Ai đó"}\" (vị trí {member.Position?.Role ?? "thành viên"}) đã rời khỏi dự án \"{member.Project.Title}\".",
+                Data = $"{{\"projectId\": {projectId}}}"
+            });
         }
 
         #endregion
 
         #region SEARCH & DISCOVERY
-
+        // ... (Giữ nguyên các hàm SearchProjects, GetFeaturedProjects) ...
         public async Task<(List<ProjectListDto> Projects, int TotalCount)> SearchProjects(ProjectSearchFilters filters)
         {
             var query = _context.Projects
@@ -956,11 +1041,10 @@ namespace TimDongDoi.API.Services.Implementations
                 TotalApplications = _context.ProjectApplications.Count(a => a.ProjectId == p.Id)
             }).ToList();
         }
-
         #endregion
 
         #region HELPER METHODS
-
+        // ... (Giữ nguyên toàn bộ Helper Methods) ...
         private async Task<Project> VerifyProjectOwnership(int userId, int projectId)
         {
             var project = await _context.Projects.FindAsync(projectId);

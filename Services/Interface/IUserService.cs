@@ -11,6 +11,7 @@ namespace TimDongDoi.API.Services.Interfaces
 
         // Cập nhật hồ sơ
         Task<UserProfileDto> UpdateUserProfile(int userId, UserUpdateDto updateDto);
+        Task ChangePassword(int userId, ChangePasswordDto dto);
 
         // Lấy ID người dùng từ JWT Token
         int GetUserIdFromClaims();

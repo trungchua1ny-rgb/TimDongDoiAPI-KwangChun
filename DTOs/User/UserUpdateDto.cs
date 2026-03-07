@@ -31,4 +31,10 @@ namespace TimDongDoi.API.DTOs.User
         [Range(0, int.MaxValue, ErrorMessage = "Mức lương mong muốn phải là số dương.")]
         public int? SalaryExpectation { get; set; }
     }
+    public class ChangePasswordDto
+{
+    public string CurrentPassword { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
+    public string ConfirmPassword { get; set; } = string.Empty;
+}
 }

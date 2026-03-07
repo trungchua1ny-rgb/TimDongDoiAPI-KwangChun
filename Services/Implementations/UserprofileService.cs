@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TimDongDoi.API.Data;
+using TimDongDoi.API.DTOs.Notification;
 using TimDongDoi.API.DTOs.User;
 using TimDongDoi.API.Models;
 using TimDongDoi.API.Services.Interfaces;
@@ -10,11 +11,13 @@ namespace TimDongDoi.API.Services.Implementations
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly INotificationService _notificationService;
 
-        public UserProfileService(AppDbContext context, IWebHostEnvironment env)
+        public UserProfileService(AppDbContext context, IWebHostEnvironment env, INotificationService notificationService)
         {
             _context = context;
             _env = env;
+            _notificationService = notificationService;
         }
 
         // ===== UPLOAD HELPERS =====
@@ -55,7 +58,6 @@ namespace TimDongDoi.API.Services.Implementations
 
             var path = await SaveFile(file, "avatars");
 
-            // Xóa avatar cũ nếu có
             if (!string.IsNullOrEmpty(user.Avatar))
             {
                 var oldPath = Path.Combine(_env.WebRootPath, user.Avatar.TrimStart('/'));
@@ -81,6 +83,16 @@ namespace TimDongDoi.API.Services.Implementations
             user.CvFile = path;
             user.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
+            // Thông báo upload CV thành công
+            await _notificationService.CreateNotification(new CreateNotificationRequest
+            {
+                UserId = userId,
+                Type = "system",
+                Title = "CV đã được cập nhật 📄",
+                Content = "CV của bạn đã được tải lên thành công. Nhà tuyển dụng có thể xem CV này khi bạn ứng tuyển.",
+                Data = $"{{\"cvFile\": \"{path}\"}}"
+            });
 
             return path;
         }

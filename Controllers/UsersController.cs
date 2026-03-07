@@ -2,14 +2,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TimDongDoi.API.DTOs.User;
 using TimDongDoi.API.Services.Interfaces;
-using System.Threading.Tasks;
-using System;
-using System.Collections.Generic;
 using System.Net;
 
 namespace TimDongDoi.API.Controllers
 {
-    [Authorize] // Bảo vệ tất cả các endpoint trong Controller này
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
@@ -21,25 +18,15 @@ namespace TimDongDoi.API.Controllers
             _userService = userService;
         }
 
-        /// <summary>
-        /// Lấy hồ sơ người dùng của chính mình.
-        /// GET /api/Users/profile/me
-        /// </summary>
+        // GET /api/Users/profile/me
         [HttpGet("profile/me")]
         public async Task<IActionResult> GetCurrentUserProfile()
         {
             try
             {
-                // Lấy User ID từ JWT Token đã được xác thực (qua UserService)
-                int userId = _userService.GetUserIdFromClaims(); 
-                
+                int userId = _userService.GetUserIdFromClaims();
                 var profile = await _userService.GetUserProfile(userId);
-                
-                return Ok(new 
-                { 
-                    Message = "Lấy hồ sơ thành công.", 
-                    Data = profile 
-                });
+                return Ok(new { Message = "Lấy hồ sơ thành công.", Data = profile });
             }
             catch (UnauthorizedAccessException)
             {
@@ -51,40 +38,23 @@ namespace TimDongDoi.API.Controllers
             }
             catch (Exception ex)
             {
-                // Log lỗi chi tiết tại đây
-                return StatusCode((int)HttpStatusCode.InternalServerError, 
+                return StatusCode((int)HttpStatusCode.InternalServerError,
                     new { Message = "Lỗi server khi lấy hồ sơ.", Detail = ex.Message });
             }
         }
 
-        /// <summary>
-        /// Cập nhật hồ sơ người dùng của chính mình.
-        /// PUT /api/Users/profile/me
-        /// </summary>
+        // PUT /api/Users/profile/me
         [HttpPut("profile/me")]
         public async Task<IActionResult> UpdateCurrentUserProfile([FromBody] UserUpdateDto updateDto)
         {
-            // Kiểm tra ModelState (xác thực DTO)
             if (!ModelState.IsValid)
-            {
-                return BadRequest(new 
-                { 
-                    Message = "Dữ liệu không hợp lệ.", 
-                    Errors = ModelState 
-                });
-            }
-            
+                return BadRequest(new { Message = "Dữ liệu không hợp lệ.", Errors = ModelState });
+
             try
             {
-                int userId = _userService.GetUserIdFromClaims(); 
-                
+                int userId = _userService.GetUserIdFromClaims();
                 var updatedProfile = await _userService.UpdateUserProfile(userId, updateDto);
-                
-                return Ok(new 
-                { 
-                    Message = "Cập nhật hồ sơ thành công.", 
-                    Data = updatedProfile 
-                });
+                return Ok(new { Message = "Cập nhật hồ sơ thành công.", Data = updatedProfile });
             }
             catch (UnauthorizedAccessException)
             {
@@ -92,7 +62,6 @@ namespace TimDongDoi.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                // Xử lý lỗi validation từ Service (Gender, Birthday, Salary)
                 return BadRequest(new { Message = ex.Message });
             }
             catch (KeyNotFoundException ex)
@@ -101,28 +70,53 @@ namespace TimDongDoi.API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode((int)HttpStatusCode.InternalServerError, 
+                return StatusCode((int)HttpStatusCode.InternalServerError,
                     new { Message = "Lỗi server khi cập nhật hồ sơ.", Detail = ex.Message });
             }
         }
-        // GET /api/Users/{id} - Xem profile công khai của user bất kỳ
-[HttpGet("{id}")]
-[AllowAnonymous]
-public async Task<IActionResult> GetPublicProfile(int id)
-{
-    try
-    {
-        var profile = await _userService.GetUserProfile(id);
-        return Ok(new { message = "Lấy hồ sơ thành công.", data = profile });
-    }
-    catch (KeyNotFoundException ex)
-    {
-        return NotFound(new { Message = ex.Message });
-    }
-    catch (Exception ex)
-    {
-        return StatusCode(500, new { Message = ex.Message });
-    }
-}
+
+        // GET /api/Users/{id} - Xem profile công khai
+        [HttpGet("{id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicProfile(int id)
+        {
+            try
+            {
+                var profile = await _userService.GetUserProfile(id);
+                return Ok(new { message = "Lấy hồ sơ thành công.", data = profile });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
+
+        // PUT /api/Users/change-password
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            try
+            {
+                var userId = _userService.GetUserIdFromClaims();
+                await _userService.ChangePassword(userId, dto);
+                return Ok(new { success = true, message = "Đổi mật khẩu thành công" });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized(new { success = false, message = "Không có quyền truy cập." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
     }
 }

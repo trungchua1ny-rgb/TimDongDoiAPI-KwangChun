@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TimDongDoi.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bcf942283a6d5d590cea3a1ef3d574c3c18c50d6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0de2a26368062480280391a1a6c44c56b4d04764")]
 [assembly: System.Reflection.AssemblyProductAttribute("TimDongDoi.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TimDongDoi.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

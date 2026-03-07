@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TimDongDoi.API.Data;
 using TimDongDoi.API.DTOs.Message;
+using TimDongDoi.API.DTOs.Notification; // ✅ Thêm namespace này cho CreateNotificationRequest
 using TimDongDoi.API.Models;
 using TimDongDoi.API.Services.Interfaces;
 
@@ -9,10 +10,13 @@ namespace TimDongDoi.API.Services.Implementations;
 public class MessageService : IMessageService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService; // ✅ Thêm Service Thông báo
 
-    public MessageService(AppDbContext context)
+    // ✅ Tiêm INotificationService vào Constructor
+    public MessageService(AppDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<ConversationListResponse> GetConversations(int userId)
@@ -140,6 +144,17 @@ public class MessageService : IMessageService
 
         _context.Messages.Add(message);
         await _context.SaveChangesAsync();
+
+        // ====== ✅ THÔNG BÁO ======
+        // Gửi thông báo cho người nhận (ToUserId) khi có tin nhắn mới
+        await _notificationService.CreateNotification(new CreateNotificationRequest
+        {
+            UserId = request.ToUserId,
+            Type = "new_message",
+            Title = "Tin nhắn mới! 💬",
+            Content = $"{fromUser?.FullName ?? "Ai đó"} vừa gửi cho bạn một tin nhắn.",
+            Data = $"{{\"senderId\": {fromUserId}, \"messageId\": {message.Id}}}"
+        });
 
         return new MessageDto
         {
