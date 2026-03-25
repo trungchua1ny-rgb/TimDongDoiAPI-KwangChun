@@ -30,7 +30,7 @@ public interface IReviewService
     /// <summary>
     /// Lấy danh sách reviews của một user (nhận được)
     /// </summary>
-    Task<(List<ReviewDto> Reviews, int Total)> GetUserReviewsAsync(int userId, ReviewSearchRequest request);
+    Task<(List<ReviewDto> Reviews, int Total)> GetUserReviewsAsync(int userId, ReviewSearchRequest request, int? currentUserId = null);
     
     /// <summary>
     /// Lấy danh sách reviews user đã viết

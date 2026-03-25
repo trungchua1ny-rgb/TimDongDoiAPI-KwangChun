@@ -121,36 +121,48 @@ public class ReviewService : IReviewService
         return await MapToReviewDto(review, currentUserId);
     }
 
-    public async Task<(List<ReviewDto> Reviews, int Total)> GetUserReviewsAsync(int userId, ReviewSearchRequest request)
+    public async Task<(List<ReviewDto> Reviews, int Total)> GetUserReviewsAsync(int userId, ReviewSearchRequest request, int? currentUserId = null)
+{
+    // 1. Bước đầu chỉ lọc lấy tất cả đánh giá của userId này
+    var query = _context.Reviews
+        .AsNoTracking()
+        .Where(r => r.ToUserId == userId);
+
+    // 2. LOGIC QUAN TRỌNG: 
+    // Nếu người đang xem KHÔNG PHẢI là chủ tài khoản (hoặc chưa đăng nhập),
+    // thì chỉ cho phép lấy những bài đánh giá đang được hiển thị (IsVisible == true)
+    if (currentUserId == null || currentUserId != userId)
     {
-        var query = _context.Reviews
-            .AsNoTracking()
-            .Where(r => r.ToUserId == userId && (r.IsVisible ?? false));
-
-        if (!string.IsNullOrWhiteSpace(request.Type))
-            query = query.Where(r => r.Type == request.Type);
-
-        if (request.MinRating.HasValue)
-            query = query.Where(r => r.Rating >= request.MinRating.Value);
-        if (request.MaxRating.HasValue)
-            query = query.Where(r => r.Rating <= request.MaxRating.Value);
-
-        var total = await query.CountAsync();
-
-        var reviews = await query
-            .OrderByDescending(r => r.CreatedAt)
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToListAsync();
-
-        var result = new List<ReviewDto>();
-        foreach (var review in reviews)
-        {
-            result.Add(await MapToReviewDto(review));
-        }
-
-        return (result, total);
+        query = query.Where(r => r.IsVisible == true);
     }
+
+    // 3. Các bộ lọc (Filter) giữ nguyên
+    if (!string.IsNullOrWhiteSpace(request.Type))
+        query = query.Where(r => r.Type == request.Type);
+
+    if (request.MinRating.HasValue)
+        query = query.Where(r => r.Rating >= request.MinRating.Value);
+        
+    if (request.MaxRating.HasValue)
+        query = query.Where(r => r.Rating <= request.MaxRating.Value);
+
+    var total = await query.CountAsync();
+
+    var reviews = await query
+        .OrderByDescending(r => r.CreatedAt)
+        .Skip((request.Page - 1) * request.PageSize)
+        .Take(request.PageSize)
+        .ToListAsync();
+
+    var result = new List<ReviewDto>();
+    foreach (var review in reviews)
+    {
+        // Nhớ truyền thêm currentUserId vào MapToReviewDto nếu hàm map của bạn có hỗ trợ
+        result.Add(await MapToReviewDto(review, currentUserId));
+    }
+
+    return (result, total);
+}
 
     public async Task<(List<ReviewDto> Reviews, int Total)> GetReviewsByUserAsync(int userId, ReviewSearchRequest request)
     {

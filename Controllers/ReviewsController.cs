@@ -114,7 +114,11 @@ public class ReviewsController : ControllerBase
         try
         {
             request.ToUserId = userId;
-            var (reviews, total) = await _reviewService.GetUserReviewsAsync(userId, request);
+            // ✅ Đã thêm logic lấy currentUserId để truyền xuống Service
+            int? currentUserId = User.Identity?.IsAuthenticated == true ? GetCurrentUserId() : null;
+            
+            var (reviews, total) = await _reviewService.GetUserReviewsAsync(userId, request, currentUserId);
+            
             return Ok(new
             {
                 success = true,
