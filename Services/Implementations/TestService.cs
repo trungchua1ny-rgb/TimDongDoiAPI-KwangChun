@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using TimDongDoi.API.Data;
+using TimDongDoi.API.DTOs.Notification;
 using TimDongDoi.API.DTOs.Test;
 using TimDongDoi.API.Models;
 using TimDongDoi.API.Services.Interfaces;
@@ -10,10 +11,12 @@ namespace TimDongDoi.API.Services.Implementations;
 public class TestService : ITestService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public TestService(AppDbContext context)
+    public TestService(AppDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     // ==================== HELPER ====================
@@ -129,7 +132,6 @@ public class TestService : ITestService
     {
         var test = await GetTestAndVerifyOwner(companyUserId, testId);
 
-        // Không cho xóa nếu đã có candidate làm
         var hasResults = await _context.ApplicationTests.AnyAsync(at => at.TestId == testId);
         if (hasResults)
             throw new InvalidOperationException("Cannot delete test that has been taken by candidates");
@@ -413,7 +415,6 @@ public class TestService : ITestService
         if (appTest.Status != "in_progress")
             throw new InvalidOperationException("Test has not been started yet");
 
-        // Chấm điểm tự động cho multiple_choice
         int score = 0;
         int totalPoints = appTest.Test.TestQuestions.Sum(q => q.Points ?? 1);
 
@@ -435,7 +436,6 @@ public class TestService : ITestService
                         }
                     }
                 }
-                // essay/coding → không tự chấm, tính full điểm tạm
                 else if (question.Type != "multiple_choice")
                 {
                     score += question.Points ?? 1;
@@ -501,6 +501,166 @@ public class TestService : ITestService
                 CompletedAt     = at.CompletedAt
             })
             .ToListAsync();
+    }
+
+    public async Task<ApplicationTestDetailDto> GetApplicationTestDetail(
+    int companyUserId, int applicationTestId)
+    {
+        var company = await GetCompanyByUserId(companyUserId);
+
+        var appTest = await _context.ApplicationTests
+            .Include(at => at.Application)
+                .ThenInclude(a => a.Job)
+            .Include(at => at.Test)
+                .ThenInclude(t => t.TestQuestions)
+            .FirstOrDefaultAsync(at => at.Id == applicationTestId)
+            ?? throw new KeyNotFoundException("ApplicationTest not found");
+
+        if (appTest.Application.Job.CompanyId != company.Id)
+            throw new UnauthorizedAccessException("You don't own this test");
+
+        Dictionary<string, string> answers = new();
+        if (!string.IsNullOrEmpty(appTest.Answers))
+        {
+            try { answers = JsonSerializer.Deserialize<Dictionary<string, string>>(appTest.Answers) ?? new(); }
+            catch { }
+        }
+
+        Dictionary<string, int> manualScores = new();
+        Dictionary<string, string> feedbacks = new();
+        if (!string.IsNullOrEmpty(appTest.ManualScores))
+        {
+            try {
+                var ms = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(appTest.ManualScores) ?? new();
+                foreach (var kv in ms)
+                {
+                    if (kv.Value.TryGetProperty("score", out var s)) manualScores[kv.Key] = s.GetInt32();
+                    if (kv.Value.TryGetProperty("feedback", out var f)) feedbacks[kv.Key] = f.GetString() ?? "";
+                }
+            }
+            catch { }
+        }
+
+        var questions = appTest.Test.TestQuestions
+            .OrderBy(q => q.OrderNum)
+            .Select(q => new QuestionWithAnswerDto
+            {
+                Id            = q.Id,
+                Question      = q.Question,
+                Type          = q.Type,
+                Options       = q.Options,
+                CorrectAnswer = q.Type == "multiple_choice" ? q.CorrectAnswer : null,
+                UserAnswer    = answers.GetValueOrDefault(q.Id.ToString(), ""),
+                Points        = q.Points ?? 1,
+                OrderNum      = q.OrderNum ?? 0,
+                IsAutoGraded  = q.Type == "multiple_choice",
+                ManualScore   = manualScores.TryGetValue(q.Id.ToString(), out var msScore) ? msScore : null,
+                Feedback      = feedbacks.GetValueOrDefault(q.Id.ToString(), ""),
+            })
+            .ToList();
+
+        return new ApplicationTestDetailDto
+        {
+            Id            = appTest.Id,
+            ApplicationId = appTest.ApplicationId,
+            TestTitle     = appTest.Test.Title,
+            Score         = appTest.Score,
+            PassingScore  = appTest.Test.PassingScore,
+            Passed        = appTest.Score.HasValue && appTest.Test.PassingScore.HasValue
+                            ? appTest.Score >= appTest.Test.PassingScore : null,
+            Status        = appTest.Status,
+            StartedAt     = appTest.StartedAt,
+            CompletedAt   = appTest.CompletedAt,
+            Questions     = questions,
+        };
+    }
+
+    public async Task<ApplicationTestDto> ScoreManually(
+        int companyUserId, int applicationTestId, ManualScoreRequest request)
+    {
+        var company = await GetCompanyByUserId(companyUserId);
+
+        var appTest = await _context.ApplicationTests
+            .Include(at => at.Application)
+                .ThenInclude(a => a.Job)
+            .Include(at => at.Test)
+                .ThenInclude(t => t.TestQuestions)
+            .FirstOrDefaultAsync(at => at.Id == applicationTestId)
+            ?? throw new KeyNotFoundException("ApplicationTest not found");
+
+        if (appTest.Application.Job.CompanyId != company.Id)
+            throw new UnauthorizedAccessException("You don't own this test");
+
+        if (appTest.Status != "completed")
+            throw new InvalidOperationException("Test has not been completed yet");
+
+        var manualScoresDict = new Dictionary<string, object>();
+        foreach (var qs in request.Scores ?? new List<QuestionScore>())
+        {
+            var question = appTest.Test.TestQuestions
+                .FirstOrDefault(q => q.Id == qs.QuestionId)
+                ?? throw new KeyNotFoundException($"Question {qs.QuestionId} not found");
+
+            if (qs.Score < 0 || qs.Score > (question.Points ?? 1))
+                throw new InvalidOperationException(
+                    $"Score for question {qs.QuestionId} must be between 0 and {question.Points ?? 1}");
+
+            manualScoresDict[qs.QuestionId.ToString()] = new { score = qs.Score, feedback = qs.Feedback ?? "" };
+        }
+
+        Dictionary<string, string> answers = new();
+        if (!string.IsNullOrEmpty(appTest.Answers))
+        {
+            try { answers = JsonSerializer.Deserialize<Dictionary<string, string>>(appTest.Answers) ?? new(); }
+            catch { }
+        }
+
+        int totalScore = 0;
+        foreach (var q in appTest.Test.TestQuestions)
+        {
+            if (q.Type == "multiple_choice")
+            {
+                if (answers.TryGetValue(q.Id.ToString(), out var ans))
+                    if (ans.Trim().Equals(q.CorrectAnswer?.Trim(), StringComparison.OrdinalIgnoreCase))
+                        totalScore += q.Points ?? 1;
+            }
+            else
+            {
+                var scored = request.Scores?.FirstOrDefault(s => s.QuestionId == q.Id);
+                totalScore += scored?.Score ?? 0;
+            }
+        }
+
+        appTest.Score        = totalScore;
+        appTest.ManualScores = JsonSerializer.Serialize(manualScoresDict);
+
+        await _context.SaveChangesAsync();
+
+        // ✅ THÔNG BÁO CHO ỨNG VIÊN: NTD vừa chấm điểm bài test
+        await _notificationService.CreateNotification(new CreateNotificationRequest
+        {
+            UserId = appTest.Application.UserId,
+            Type = "test_scored",
+            Title = "Đã có kết quả bài kiểm tra 📝",
+            Content = $"Nhà tuyển dụng đã chấm điểm bài thi '{appTest.Test.Title}' của bạn. Tổng điểm: {totalScore}.",
+            Data = $"{{\"applicationId\": {appTest.ApplicationId}, \"testId\": {appTest.TestId}}}"
+        });
+
+        return new ApplicationTestDto
+        {
+            Id              = appTest.Id,
+            ApplicationId   = appTest.ApplicationId,
+            TestId          = appTest.TestId,
+            TestTitle       = appTest.Test.Title,
+            DurationMinutes = appTest.Test.DurationMinutes,
+            PassingScore    = appTest.Test.PassingScore,
+            Status          = appTest.Status,
+            Score           = appTest.Score,
+            Passed          = appTest.Score.HasValue && appTest.Test.PassingScore.HasValue
+                              ? appTest.Score >= appTest.Test.PassingScore : null,
+            StartedAt       = appTest.StartedAt,
+            CompletedAt     = appTest.CompletedAt,
+        };
     }
 
     // ==================== INTERVIEW ====================
@@ -586,6 +746,7 @@ public class TestService : ITestService
 
         var application = await _context.Applications
             .Include(a => a.Job)
+            .Include(a => a.User) 
             .FirstOrDefaultAsync(a => a.Id == request.ApplicationId)
             ?? throw new KeyNotFoundException("Application not found");
 
@@ -611,13 +772,17 @@ public class TestService : ITestService
         _context.Interviews.Add(interview);
         await _context.SaveChangesAsync();
 
-        await _context.Entry(interview)
-            .Reference(i => i.Application).LoadAsync();
-        await _context.Entry(interview.Application)
-            .Reference(a => a.Job).LoadAsync();
-        await _context.Entry(interview.Application)
-            .Reference(a => a.User).LoadAsync();
+        // ✅ THÔNG BÁO CHO ỨNG VIÊN: NTD vừa tạo lịch phỏng vấn
+        await _notificationService.CreateNotification(new CreateNotificationRequest
+        {
+            UserId = application.UserId,
+            Type = "interview_scheduled",
+            Title = "Lịch phỏng vấn mới 🗓️",
+            Content = $"Nhà tuyển dụng đã lên lịch phỏng vấn cho vị trí '{application.Job.Title}' vào lúc {request.ScheduledAt:HH:mm dd/MM/yyyy}.",
+            Data = $"{{\"interviewId\": {interview.Id}, \"applicationId\": {application.Id}}}"
+        });
 
+        await _context.Entry(interview).Reference(i => i.Application).LoadAsync();
         return MapInterviewToDto(interview);
     }
 
@@ -650,16 +815,38 @@ public class TestService : ITestService
         }
         if (request.DurationMinutes.HasValue) interview.DurationMinutes = request.DurationMinutes;
         if (request.MeetingLink != null) interview.MeetingLink = request.MeetingLink;
+        
+        bool isCancelled = false;
         if (request.Status != null)
         {
             var validStatuses = new[] { "scheduled", "completed", "cancelled" };
             if (!validStatuses.Contains(request.Status))
                 throw new InvalidOperationException("Status must be: scheduled, completed, cancelled");
+            
+            if (request.Status == "cancelled" && interview.Status != "cancelled")
+                isCancelled = true;
+
             interview.Status = request.Status;
         }
         interview.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        // ✅ THÔNG BÁO CHO ỨNG VIÊN: NTD vừa cập nhật/hủy lịch
+        string notifyTitle = isCancelled ? "Lịch phỏng vấn đã bị hủy ❌" : "Cập nhật lịch phỏng vấn 🔄";
+        string notifyContent = isCancelled 
+            ? $"Lịch phỏng vấn cho vị trí '{interview.Application.Job.Title}' đã bị hủy bởi nhà tuyển dụng."
+            : $"Nhà tuyển dụng vừa thay đổi thông tin lịch phỏng vấn vị trí '{interview.Application.Job.Title}'. Hãy kiểm tra lại lịch trình của bạn.";
+
+        await _notificationService.CreateNotification(new CreateNotificationRequest
+        {
+            UserId = interview.Application.UserId,
+            Type = isCancelled ? "interview_cancelled" : "interview_updated",
+            Title = notifyTitle,
+            Content = notifyContent,
+            Data = $"{{\"interviewId\": {interview.Id}, \"applicationId\": {interview.ApplicationId}}}"
+        });
+
         return MapInterviewToDto(interview);
     }
 
@@ -688,6 +875,20 @@ public class TestService : ITestService
         interview.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        // ✅ THÔNG BÁO CHO ỨNG VIÊN: Đã có đánh giá/feedback phỏng vấn
+        if (request.Status == "completed") 
+        {
+            await _notificationService.CreateNotification(new CreateNotificationRequest
+            {
+                UserId = interview.Application.UserId,
+                Type = "interview_completed",
+                Title = "Đã có đánh giá phỏng vấn 💬",
+                Content = $"Nhà tuyển dụng đã gửi phản hồi cho buổi phỏng vấn vị trí '{interview.Application.Job.Title}'.",
+                Data = $"{{\"interviewId\": {interview.Id}, \"applicationId\": {interview.ApplicationId}}}"
+            });
+        }
+
         return MapInterviewToDto(interview);
     }
 

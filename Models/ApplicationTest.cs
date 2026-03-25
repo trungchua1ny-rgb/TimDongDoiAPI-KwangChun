@@ -24,4 +24,5 @@ public partial class ApplicationTest
     public virtual Application Application { get; set; } = null!;
 
     public virtual Test Test { get; set; } = null!;
+    public string? ManualScores { get; set; }
 }

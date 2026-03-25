@@ -367,4 +367,34 @@ public class TestsController : ControllerBase
         }
         catch (Exception ex) { return StatusCode(500, new { success = false, message = ex.Message }); }
     }
+    // GET /api/tests/application-tests/{applicationTestId}/detail
+[HttpGet("application-tests/{applicationTestId}/detail")]
+[Authorize(Roles = "company")]
+public async Task<IActionResult> GetApplicationTestDetail(int applicationTestId)
+{
+    try
+    {
+        var result = await _testService.GetApplicationTestDetail(GetCurrentUserId(), applicationTestId);
+        return Ok(new { success = true, data = result });
+    }
+    catch (KeyNotFoundException ex) { return NotFound(new { success = false, message = ex.Message }); }
+    catch (UnauthorizedAccessException ex) { return Unauthorized(new { success = false, message = ex.Message }); }
+    catch (Exception ex) { return StatusCode(500, new { success = false, message = ex.Message }); }
+}
+
+// PUT /api/tests/application-tests/{applicationTestId}/score
+[HttpPut("application-tests/{applicationTestId}/score")]
+[Authorize(Roles = "company")]
+public async Task<IActionResult> ScoreManually(int applicationTestId, [FromBody] ManualScoreRequest request)
+{
+    try
+    {
+        var result = await _testService.ScoreManually(GetCurrentUserId(), applicationTestId, request);
+        return Ok(new { success = true, message = "Scored successfully", data = result });
+    }
+    catch (KeyNotFoundException ex) { return NotFound(new { success = false, message = ex.Message }); }
+    catch (UnauthorizedAccessException ex) { return Unauthorized(new { success = false, message = ex.Message }); }
+    catch (InvalidOperationException ex) { return BadRequest(new { success = false, message = ex.Message }); }
+    catch (Exception ex) { return StatusCode(500, new { success = false, message = ex.Message }); }
+}
 }

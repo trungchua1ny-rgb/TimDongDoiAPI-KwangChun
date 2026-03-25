@@ -37,4 +37,9 @@ public interface ITestService
     Task<InterviewDto> UpdateInterview(int companyUserId, int interviewId, UpdateInterviewRequest request);
     Task<InterviewDto> SubmitFeedback(int companyUserId, int interviewId, SubmitInterviewFeedbackRequest request);
     Task<List<InterviewDto>> GetMyInterviews(int userId);
+    // Lấy câu hỏi + câu trả lời của ứng viên (company xem)
+Task<ApplicationTestDetailDto> GetApplicationTestDetail(int companyUserId, int applicationTestId);
+
+// Chấm điểm thủ công cho essay/coding
+Task<ApplicationTestDto> ScoreManually(int companyUserId, int applicationTestId, ManualScoreRequest request);
 }

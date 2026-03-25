@@ -362,22 +362,230 @@ namespace TimDongDoi.API.Services.Implementations
             return job;
         }
 
-        private JobDto MapToJobDto(Job job)
+      private JobDto MapToJobDto(Job job)
+{
+    return new JobDto
+    {
+        Id = job.Id,
+        CompanyId = job.CompanyId,
+        Title = job.Title,
+        Type = job.Type,
+        Level = job.Level,
+        SalaryMin = job.SalaryMin,
+        SalaryMax = job.SalaryMax,
+        SalaryCurrency = job.SalaryCurrency ?? "VND",
+        Location = job.Location,
+        LocationType = job.LocationType,
+        Deadline = job.Deadline.HasValue
+            ? job.Deadline.Value.ToDateTime(TimeOnly.MinValue)
+            : null,
+        Status = job.Status ?? "open",
+        Views = job.Views ?? 0,
+        CreatedAt = job.CreatedAt,
+        Company = job.Company != null ? new CompanyBasicDto
         {
-            return new JobDto { Id = job.Id, Title = job.Title, Status = job.Status ?? "open", Views = job.Views ?? 0, Company = job.Company != null ? new CompanyBasicDto { Name = job.Company.Name } : null };
-        }
+            Id = job.Company.Id,
+            Name = job.Company.Name,
+            Logo = job.Company.Logo,
+            Industry = job.Company.Industry,
+            VerificationStatus = job.Company.VerificationStatus
+        } : null,
+        Skills = job.JobSkills?.Select(js => new JobSkillDto
+        {
+            Id = js.Id,
+            JobId = js.JobId,
+            SkillId = js.SkillId,
+            SkillName = js.Skill?.Name ?? "",
+            IsRequired = js.IsRequired ?? true,
+            Level = js.Level
+        }).ToList() ?? new List<JobSkillDto>(),
+        TotalApplications = job.Applications?.Count ?? 0
+    };
+}
 
         private JobDetailDto MapToJobDetailDto(Job job)
         {
             return new JobDetailDto { Id = job.Id, Title = job.Title, Description = job.Description, Status = job.Status ?? "open", Company = job.Company != null ? new CompanyBasicDto { Name = job.Company.Name } : null };
         }
 
-        public async Task<List<JobDto>> SearchJobs(string? keyword, string? location, string? type, string? level, int? salaryMin, int? salaryMax, string? skills, int page = 1, int pageSize = 20) => new();
-        public async Task<List<JobDto>> GetFeaturedJobs(int limit = 10) => new();
-        public async Task<List<JobDto>> GetJobsByCompany(int companyId, int page = 1, int pageSize = 20) => new();
-        public async Task SaveJob(int userId, int jobId) { }
-        public async Task UnsaveJob(int userId, int jobId) { }
-        public async Task<List<JobDto>> GetSavedJobs(int userId, int page = 1, int pageSize = 20) => new();
+ // Thêm vào cuối file JobService.cs, thay thế các hàm stub rỗng ở cuối class
+
+// ============================================
+// SEARCH & FILTER (PUBLIC)
+// ============================================
+
+public async Task<List<JobDto>> SearchJobs(
+    string? keyword,
+    string? location,
+    string? type,
+    string? level,
+    int? salaryMin,
+    int? salaryMax,
+    string? skills,
+    int page = 1,
+    int pageSize = 20)
+{
+    var query = _context.Jobs
+        .Include(j => j.Company)
+        .Include(j => j.JobSkills).ThenInclude(js => js.Skill)
+        .Include(j => j.Applications)
+        .Where(j => j.Status == "open")
+        .AsQueryable();
+
+    // Filter keyword (title, description, company name)
+    if (!string.IsNullOrWhiteSpace(keyword))
+    {
+        var kw = keyword.ToLower();
+        query = query.Where(j =>
+            j.Title.ToLower().Contains(kw) ||
+            (j.Description != null && j.Description.ToLower().Contains(kw)) ||
+            j.Company.Name.ToLower().Contains(kw));
+    }
+
+    // Filter location
+    if (!string.IsNullOrWhiteSpace(location))
+    {
+        var loc = location.ToLower();
+        query = query.Where(j => j.Location != null && j.Location.ToLower().Contains(loc));
+    }
+
+    // Filter type (full-time, part-time, contract, internship, freelance)
+    if (!string.IsNullOrWhiteSpace(type))
+        query = query.Where(j => j.Type == type);
+
+    // Filter level (intern, fresher, junior, middle, senior, lead)
+    if (!string.IsNullOrWhiteSpace(level))
+        query = query.Where(j => j.Level == level);
+
+    // Filter salary min
+    if (salaryMin.HasValue)
+        query = query.Where(j => j.SalaryMax == null || j.SalaryMax >= salaryMin.Value);
+
+    // Filter salary max
+    if (salaryMax.HasValue)
+        query = query.Where(j => j.SalaryMin == null || j.SalaryMin <= salaryMax.Value);
+
+    // Filter by skill names (comma-separated)
+    if (!string.IsNullOrWhiteSpace(skills))
+    {
+        var skillList = skills.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                              .Select(s => s.Trim().ToLower())
+                              .ToList();
+        query = query.Where(j => j.JobSkills.Any(js =>
+            js.Skill != null && skillList.Contains(js.Skill.Name.ToLower())));
+    }
+
+    // Exclude expired jobs
+    var today = DateOnly.FromDateTime(DateTime.UtcNow);
+    query = query.Where(j => j.Deadline == null || j.Deadline >= today);
+
+    var jobs = await query
+        .OrderByDescending(j => j.CreatedAt)
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .AsNoTracking()
+        .ToListAsync();
+
+    return jobs.Select(MapToJobDto).ToList();
+}
+
+public async Task<List<JobDto>> GetFeaturedJobs(int limit = 10)
+{
+    var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+    var jobs = await _context.Jobs
+        .Include(j => j.Company)
+        .Include(j => j.JobSkills).ThenInclude(js => js.Skill)
+        .Include(j => j.Applications)
+        .Where(j => j.Status == "open" && (j.Deadline == null || j.Deadline >= today))
+        .OrderByDescending(j => j.Views)
+        .ThenByDescending(j => j.CreatedAt)
+        .Take(limit)
+        .AsNoTracking()
+        .ToListAsync();
+
+    return jobs.Select(MapToJobDto).ToList();
+}
+
+public async Task<List<JobDto>> GetJobsByCompany(int companyId, int page = 1, int pageSize = 20)
+{
+    var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+    var jobs = await _context.Jobs
+        .Include(j => j.Company)
+        .Include(j => j.JobSkills).ThenInclude(js => js.Skill)
+        .Include(j => j.Applications)
+        .Where(j => j.CompanyId == companyId && j.Status == "open" && (j.Deadline == null || j.Deadline >= today))
+        .OrderByDescending(j => j.CreatedAt)
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .AsNoTracking()
+        .ToListAsync();
+
+    return jobs.Select(MapToJobDto).ToList();
+}
+
+// ============================================
+// SAVED JOBS
+// ============================================
+
+public async Task SaveJob(int userId, int jobId)
+{
+    var job = await _context.Jobs.FindAsync(jobId)
+        ?? throw new KeyNotFoundException("Không tìm thấy tin tuyển dụng");
+
+    var already = await _context.SavedJobs
+        .AnyAsync(sj => sj.UserId == userId && sj.JobId == jobId);
+
+    if (already)
+        throw new InvalidOperationException("Bạn đã lưu tin này rồi");
+
+    _context.SavedJobs.Add(new SavedJob
+    {
+        UserId = userId,
+        JobId = jobId,
+        CreatedAt = DateTime.UtcNow
+    });
+
+    await _context.SaveChangesAsync();
+}
+
+public async Task UnsaveJob(int userId, int jobId)
+{
+    var saved = await _context.SavedJobs
+        .FirstOrDefaultAsync(sj => sj.UserId == userId && sj.JobId == jobId);
+
+    if (saved != null)
+    {
+        _context.SavedJobs.Remove(saved);
+        await _context.SaveChangesAsync();
+    }
+}
+
+public async Task<List<JobDto>> GetSavedJobs(int userId, int page = 1, int pageSize = 20)
+{
+    var savedJobs = await _context.SavedJobs
+        .Include(sj => sj.Job)
+            .ThenInclude(j => j.Company)
+        .Include(sj => sj.Job)
+            .ThenInclude(j => j.JobSkills)
+                .ThenInclude(js => js.Skill)
+        .Include(sj => sj.Job)
+            .ThenInclude(j => j.Applications)
+        .Where(sj => sj.UserId == userId)
+        .OrderByDescending(sj => sj.CreatedAt)
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .AsNoTracking()
+        .ToListAsync();
+
+    return savedJobs
+        .Where(sj => sj.Job != null)
+        .Select(sj => {
+            return MapToJobDto(sj.Job!);
+        })
+        .ToList();
+}
 
         public async Task IncrementViewCount(int jobId)
         {

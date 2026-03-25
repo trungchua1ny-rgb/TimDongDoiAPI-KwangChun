@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TimDongDoi.API.Data;
 using TimDongDoi.API.DTOs.Report;
+using TimDongDoi.API.DTOs.Notification; // ✅ Thêm DTO Notification
 using TimDongDoi.API.Models;
 using TimDongDoi.API.Services.Interfaces;
 
@@ -9,10 +10,12 @@ namespace TimDongDoi.API.Services.Implementations;
 public class ReportService : IReportService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService; // ✅ Thêm Notification Service
 
-    public ReportService(AppDbContext context)
+    public ReportService(AppDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<ReportDto> CreateReport(int reporterId, CreateReportRequest request)
@@ -79,6 +82,16 @@ public class ReportService : IReportService
         _context.Reports.Add(report);
         await _context.SaveChangesAsync();
 
+        // ✅ THÔNG BÁO: Xác nhận cho người gửi báo cáo
+        await _notificationService.CreateNotification(new CreateNotificationRequest
+        {
+            UserId = reporterId,
+            Type = "report_created",
+            Title = "Đã gửi báo cáo! 🛡️",
+            Content = $"Yêu cầu báo cáo {request.Type} của bạn đã được gửi tới hệ thống và đang chờ xét duyệt.",
+            Data = $"{{\"reportId\": {report.Id}}}"
+        });
+
         var reporter = await _context.Users.FindAsync(reporterId);
         return MapToDto(report, reporter?.FullName ?? string.Empty);
     }
@@ -105,8 +118,7 @@ public class ReportService : IReportService
         };
     }
 
-    public async Task<ReportListResponse> GetAllReports(
-        int page, int pageSize, string? status, string? type)
+    public async Task<ReportListResponse> GetAllReports(int page, int pageSize, string? status, string? type)
     {
         var query = _context.Reports.AsQueryable();
 
@@ -162,7 +174,6 @@ public class ReportService : IReportService
         // Xử lý ban nếu có BanAction
         if (request.BanAction != null)
         {
-            // Chỉ cho phép ban khi resolve report loại user
             if (report.Type != "user")
                 throw new InvalidOperationException("Ban action only applies to reports of type 'user'");
 
@@ -186,10 +197,18 @@ public class ReportService : IReportService
             userToBan.Status = "banned";
             userToBan.BanReason = request.BanAction.Reason;
             userToBan.BannedUntil = request.BanAction.Type == "permanent"
-                ? null                                                                    // null = vĩnh viễn
+                ? null 
                 : DateTime.UtcNow.AddDays(request.BanAction.DurationDays!.Value);
 
-            // Ghi admin log
+            // ✅ THÔNG BÁO: Gửi cho người bị khóa tài khoản
+            await _notificationService.CreateNotification(new CreateNotificationRequest
+            {
+                UserId = userToBan.Id,
+                Type = "account_banned",
+                Title = "Thông báo khóa tài khoản 🚫",
+                Content = $"Tài khoản của bạn đã bị khóa. Lý do: {request.BanAction.Reason}. Thời hạn: {(userToBan.BannedUntil.HasValue ? userToBan.BannedUntil.Value.ToString("dd/MM/yyyy") : "Vĩnh viễn")}"
+            });
+
             _context.AdminLogs.Add(new AdminLog
             {
                 AdminId = adminId,
@@ -210,7 +229,6 @@ public class ReportService : IReportService
         report.AdminNote = request.AdminNote;
         report.ResolvedAt = DateTime.UtcNow;
 
-        // Ghi admin log cho hành động handle report
         _context.AdminLogs.Add(new AdminLog
         {
             AdminId = adminId,
@@ -222,6 +240,16 @@ public class ReportService : IReportService
         });
 
         await _context.SaveChangesAsync();
+
+        // ✅ THÔNG BÁO: Phản hồi kết quả xử lý cho người gửi báo cáo
+        await _notificationService.CreateNotification(new CreateNotificationRequest
+        {
+            UserId = report.ReporterId,
+            Type = "report_handled",
+            Title = "Báo cáo của bạn đã được xử lý ✅",
+            Content = $"Báo cáo loại {report.Type} của bạn đã được Admin xử lý với trạng thái: {request.Status}.",
+            Data = $"{{\"reportId\": {report.Id}, \"status\": \"{request.Status}\"}}"
+        });
 
         var reporter = await _context.Users.FindAsync(report.ReporterId);
         return MapToDto(report, reporter?.FullName ?? string.Empty);
@@ -250,6 +278,15 @@ public class ReportService : IReportService
         });
 
         await _context.SaveChangesAsync();
+
+        // ✅ THÔNG BÁO: Gửi cho người dùng được mở khóa
+        await _notificationService.CreateNotification(new CreateNotificationRequest
+        {
+            UserId = userId,
+            Type = "account_unbanned",
+            Title = "Chào mừng bạn trở lại! ✨",
+            Content = "Tài khoản của bạn đã được mở khóa bởi Quản trị viên. Giờ bạn có thể truy cập lại dịch vụ."
+        });
     }
 
     public async Task<UserStatusDto> GetUserStatus(int userId)
@@ -257,7 +294,6 @@ public class ReportService : IReportService
         var user = await _context.Users.FindAsync(userId)
             ?? throw new KeyNotFoundException("User not found");
 
-        // Tự động unban nếu hết hạn
         if (user.Status == "banned" && user.BannedUntil.HasValue && user.BannedUntil < DateTime.UtcNow)
         {
             user.Status = "active";
